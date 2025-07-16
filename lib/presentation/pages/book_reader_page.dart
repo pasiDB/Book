@@ -17,17 +17,35 @@ class BookReaderPage extends StatefulWidget {
 class _BookReaderPageState extends State<BookReaderPage> {
   double fontSize = AppConstants.defaultFontSize;
   final ScrollController _scrollController = ScrollController();
+  bool _isAtEnd = false;
 
   @override
   void initState() {
     super.initState();
     _loadBookContent();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    final threshold = 50.0; // px from bottom
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - threshold) {
+      if (!_isAtEnd) {
+        setState(() {
+          _isAtEnd = true;
+        });
+      }
+    } else if (_isAtEnd) {
+      setState(() {
+        _isAtEnd = false;
+      });
+    }
   }
 
   Future<void> _loadBookContent() async {
@@ -84,29 +102,49 @@ class _BookReaderPageState extends State<BookReaderPage> {
           }
         },
         builder: (context, state) {
+          Widget? progressBar;
+          if (state.bookContentChunks.isNotEmpty) {
+            final progress =
+                (state.currentChunkIndex + 1) / state.bookContentChunks.length;
+            progressBar = LinearProgressIndicator(
+              value: progress.clamp(0.0, 1.0),
+              minHeight: 4,
+              backgroundColor: Colors.grey[300],
+              valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.primary),
+            );
+          }
           if (state.isLoading) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Loading book content...',
-                    style: TextStyle(fontSize: 16),
+            return Column(
+              children: [
+                if (progressBar != null) progressBar,
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Loading book content...',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'This may take a moment as we fetch the content from Project Gutenberg.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'This may take a moment as we fetch the content from Project Gutenberg.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                ],
-              ),
+                ),
+              ],
             );
           } else if (state.bookContent != null) {
             return Column(
               children: [
+                if (progressBar != null) progressBar,
                 Expanded(
                   child: SingleChildScrollView(
                     controller: _scrollController,
@@ -120,7 +158,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
                     ),
                   ),
                 ),
-                if (state.hasMoreContent)
+                if (state.hasMoreContent && _isAtEnd)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: ElevatedButton(
@@ -129,35 +167,49 @@ class _BookReaderPageState extends State<BookReaderPage> {
                               LoadBookContentChunk(
                                   chunkIndex: state.currentChunkIndex + 1),
                             );
+                        // Removed auto-scroll to bottom
                       },
                       child: const Text('Read next'),
                     ),
                   ),
+                if (!state.hasMoreContent && _isAtEnd)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Text('Completed',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
               ],
             );
           } else if (state.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red,
+            return Column(
+              children: [
+                if (progressBar != null) progressBar,
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.red,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Error:  {state.error}',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _loadBookContent,
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error:  {state.error}',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _loadBookContent,
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
+                ),
+              ],
             );
           } else {
             return const Center(child: CircularProgressIndicator());
