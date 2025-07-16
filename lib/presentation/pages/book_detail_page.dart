@@ -101,6 +101,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
   }
 
   Widget _buildBookDetails(Book book, bool alreadyInLibrary) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final chipBg = isDark ? Colors.grey[800] : Colors.grey[200];
+    final chipText = isDark ? Colors.white : Colors.black87;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -149,19 +153,18 @@ class _BookDetailPageState extends State<BookDetailPage> {
                   children: [
                     Text(
                       book.title,
-                      style:
-                          Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'by ${book.authorNames}',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     // Removed Available Formats section
@@ -215,9 +218,9 @@ class _BookDetailPageState extends State<BookDetailPage> {
           if (book.subjects.isNotEmpty) ...[
             Text(
               'Subjects:',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -225,8 +228,8 @@ class _BookDetailPageState extends State<BookDetailPage> {
               runSpacing: 8,
               children: book.subjects.take(5).map((subject) {
                 return Chip(
-                  label: Text(subject),
-                  backgroundColor: Colors.grey[200],
+                  label: Text(subject, style: TextStyle(color: chipText)),
+                  backgroundColor: chipBg,
                 );
               }).toList(),
             ),
@@ -237,9 +240,9 @@ class _BookDetailPageState extends State<BookDetailPage> {
           if (book.languages.isNotEmpty) ...[
             Text(
               'Languages:',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -247,8 +250,8 @@ class _BookDetailPageState extends State<BookDetailPage> {
               runSpacing: 8,
               children: book.languages.map((language) {
                 return Chip(
-                  label: Text(language),
-                  backgroundColor: Colors.grey[200],
+                  label: Text(language, style: TextStyle(color: chipText)),
+                  backgroundColor: chipBg,
                 );
               }).toList(),
             ),
@@ -259,9 +262,9 @@ class _BookDetailPageState extends State<BookDetailPage> {
           if (book.bookshelves.isNotEmpty) ...[
             Text(
               'Bookshelves:',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -269,8 +272,8 @@ class _BookDetailPageState extends State<BookDetailPage> {
               runSpacing: 8,
               children: book.bookshelves.take(3).map((bookshelf) {
                 return Chip(
-                  label: Text(bookshelf),
-                  backgroundColor: Colors.grey[200],
+                  label: Text(bookshelf, style: TextStyle(color: chipText)),
+                  backgroundColor: chipBg,
                 );
               }).toList(),
             ),
