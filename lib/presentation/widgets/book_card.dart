@@ -84,24 +84,7 @@ class BookCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        if (book.hasTextFormat)
-                          const Chip(
-                            label: Text('TXT'),
-                            backgroundColor: AppConstants.primaryColor,
-                            labelStyle: TextStyle(color: Colors.white),
-                          ),
-                        if (book.hasTextFormat && book.hasEpubFormat)
-                          const SizedBox(width: 8),
-                        if (book.hasEpubFormat)
-                          const Chip(
-                            label: Text('EPUB'),
-                            backgroundColor: AppConstants.secondaryColor,
-                            labelStyle: TextStyle(color: Colors.white),
-                          ),
-                      ],
-                    ),
+                    // Removed TXT/EPUB chips
                   ],
                 ),
               ),

@@ -164,49 +164,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                           ),
                     ),
                     const SizedBox(height: 16),
-
-                    // Format Availability
-                    if (book.hasReadableFormat || book.hasEpubFormat)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Available Formats:',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          // Replace Row with Wrap for format chips
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              if (book.hasTextFormat)
-                                const Chip(
-                                  label: Text('TXT'),
-                                  backgroundColor: Colors.blue,
-                                  labelStyle: TextStyle(color: Colors.white),
-                                ),
-                              if (book.hasHtmlFormat)
-                                const Chip(
-                                  label: Text('HTML'),
-                                  backgroundColor: Colors.orange,
-                                  labelStyle: TextStyle(color: Colors.white),
-                                ),
-                              if (book.hasEpubFormat)
-                                const Chip(
-                                  label: Text('EPUB'),
-                                  backgroundColor: Colors.green,
-                                  labelStyle: TextStyle(color: Colors.white),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
+                    // Removed Available Formats section
                   ],
                 ),
               ),
