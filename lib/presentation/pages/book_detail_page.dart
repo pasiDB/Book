@@ -16,6 +16,8 @@ class BookDetailPage extends StatefulWidget {
 }
 
 class _BookDetailPageState extends State<BookDetailPage> {
+  bool _addedToLibrary = false;
+
   @override
   void initState() {
     super.initState();
@@ -34,46 +36,71 @@ class _BookDetailPageState extends State<BookDetailPage> {
         elevation: 0,
         automaticallyImplyLeading: false,
       ),
-      body: BlocBuilder<BookBloc, BookState>(
-        builder: (context, state) {
-          if (state.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (state.selectedBook != null) {
-            return _buildBookDetails(state.selectedBook!);
-          } else if (state.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error: ${state.error}',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<BookBloc>().add(LoadBookById(widget.bookId));
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-          return const Center(child: Text('Loading...'));
+      body: BlocListener<BookBloc, BookState>(
+        listenWhen: (previous, current) {
+          // Listen for changes in currentlyReadingBooks
+          return previous.currentlyReadingBooks.length !=
+              current.currentlyReadingBooks.length;
         },
+        listener: (context, state) {
+          final selectedBook = state.selectedBook;
+          if (selectedBook != null &&
+              state.currentlyReadingBooks.any((b) => b.id == selectedBook.id)) {
+            if (!_addedToLibrary) {
+              setState(() {
+                _addedToLibrary = true;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Book added to Library!')),
+              );
+            }
+          }
+        },
+        child: BlocBuilder<BookBloc, BookState>(
+          builder: (context, state) {
+            if (state.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (state.selectedBook != null) {
+              final alreadyInLibrary = state.currentlyReadingBooks
+                  .any((b) => b.id == state.selectedBook!.id);
+              return _buildBookDetails(state.selectedBook!, alreadyInLibrary);
+            } else if (state.error != null) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error:  {state.error}',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        context
+                            .read<BookBloc>()
+                            .add(LoadBookById(widget.bookId));
+                      },
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return const Center(child: Text('Loading...'));
+          },
+        ),
       ),
     );
   }
 
-  Widget _buildBookDetails(Book book) {
+  Widget _buildBookDetails(Book book, bool alreadyInLibrary) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -205,21 +232,18 @@ class _BookDetailPageState extends State<BookDetailPage> {
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: book.hasReadableFormat || book.hasEpubFormat
-                      ? () {
-                          // TODO: Implement download functionality
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content:
-                                  Text('Download functionality coming soon!'),
-                            ),
-                          );
-                        }
-                      : null,
-                  icon: const Icon(Icons.download),
-                  label: const Text('Download'),
-                  style: OutlinedButton.styleFrom(
+                child: ElevatedButton.icon(
+                  onPressed: alreadyInLibrary
+                      ? null
+                      : () {
+                          context.read<BookBloc>().add(AddBookToLibrary(book));
+                        },
+                  icon: const Icon(Icons.library_add),
+                  label:
+                      Text(alreadyInLibrary ? 'In Library' : 'Add to Library'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),

@@ -11,6 +11,7 @@ class BookState extends Equatable {
   final List<String> bookContentChunks;
   final int currentChunkIndex;
   final bool hasMoreContent;
+  final List<Book> currentlyReadingBooks;
 
   const BookState({
     this.books = const [],
@@ -22,6 +23,7 @@ class BookState extends Equatable {
     this.bookContentChunks = const [],
     this.currentChunkIndex = 0,
     this.hasMoreContent = false,
+    this.currentlyReadingBooks = const [],
   });
 
   BookState copyWith({
@@ -34,6 +36,7 @@ class BookState extends Equatable {
     List<String>? bookContentChunks,
     int? currentChunkIndex,
     bool? hasMoreContent,
+    List<Book>? currentlyReadingBooks,
   }) {
     return BookState(
       books: books ?? this.books,
@@ -45,6 +48,8 @@ class BookState extends Equatable {
       bookContentChunks: bookContentChunks ?? this.bookContentChunks,
       currentChunkIndex: currentChunkIndex ?? this.currentChunkIndex,
       hasMoreContent: hasMoreContent ?? this.hasMoreContent,
+      currentlyReadingBooks:
+          currentlyReadingBooks ?? this.currentlyReadingBooks,
     );
   }
 
@@ -58,6 +63,7 @@ class BookState extends Equatable {
         error,
         bookContentChunks,
         currentChunkIndex,
-        hasMoreContent
+        hasMoreContent,
+        currentlyReadingBooks
       ];
 }

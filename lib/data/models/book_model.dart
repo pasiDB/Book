@@ -18,7 +18,16 @@ class BookModel extends Book {
       id: json['id'] as int,
       title: json['title'] as String,
       authors: (json['authors'] as List<dynamic>?)
-              ?.map((author) => author['name'] as String)
+              ?.map((author) {
+                if (author is Map && author.containsKey('name')) {
+                  return author['name'] as String;
+                } else if (author is String) {
+                  return author;
+                } else {
+                  return '';
+                }
+              })
+              .where((name) => name.isNotEmpty)
               .toList() ??
           [],
       subjects: (json['subjects'] as List<dynamic>?)

@@ -4,6 +4,8 @@ import '../../../domain/usecases/search_books.dart';
 import '../../../domain/usecases/get_book_content.dart';
 import '../../../domain/usecases/get_book_content_by_gutenberg_id.dart';
 import '../../../domain/repositories/book_repository.dart';
+import '../../../data/repositories/book_repository_impl.dart';
+import '../../../data/models/book_model.dart';
 import 'book_event.dart';
 import 'book_state.dart';
 
@@ -28,6 +30,8 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     on<LoadBookContent>(_onLoadBookContent);
     on<LoadBookContentByGutenbergId>(_onLoadBookContentByGutenbergId);
     on<LoadBookContentChunk>(_onLoadBookContentChunk);
+    on<AddBookToLibrary>(_onAddBookToLibrary);
+    on<LoadCurrentlyReadingBooks>(_onLoadCurrentlyReadingBooks);
   }
 
   static const int _chunkSize = 3000;
@@ -177,5 +181,36 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     } else {
       print('[BLoC] No more chunks to load.');
     }
+  }
+
+  Future<void> _onAddBookToLibrary(
+    AddBookToLibrary event,
+    Emitter<BookState> emit,
+  ) async {
+    // Load current list
+    final localDataSource = bookRepository is BookRepositoryImpl
+        ? (bookRepository as BookRepositoryImpl).localDataSource
+        : null;
+    if (localDataSource == null) return;
+    final currentBooks = await localDataSource.getCurrentlyReadingBooks();
+    // Avoid duplicates
+    if (!currentBooks.any((b) => b.id == event.book.id)) {
+      final updatedBooks = List<BookModel>.from(currentBooks)
+        ..add(BookModel.fromJson((event.book as BookModel).toJson()));
+      await localDataSource.saveCurrentlyReadingBooks(updatedBooks);
+      emit(state.copyWith(currentlyReadingBooks: updatedBooks));
+    }
+  }
+
+  Future<void> _onLoadCurrentlyReadingBooks(
+    LoadCurrentlyReadingBooks event,
+    Emitter<BookState> emit,
+  ) async {
+    final localDataSource = bookRepository is BookRepositoryImpl
+        ? (bookRepository as BookRepositoryImpl).localDataSource
+        : null;
+    if (localDataSource == null) return;
+    final books = await localDataSource.getCurrentlyReadingBooks();
+    emit(state.copyWith(currentlyReadingBooks: books));
   }
 }

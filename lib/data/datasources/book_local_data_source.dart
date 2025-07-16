@@ -1,11 +1,14 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/book_model.dart';
+import '../../core/constants/app_constants.dart';
 
 abstract class BookLocalDataSource {
   Future<void> cacheBooks(String key, List<BookModel> books);
   Future<List<BookModel>> getCachedBooks(String key);
   Future<void> clearCache();
+  Future<void> saveCurrentlyReadingBooks(List<BookModel> books);
+  Future<List<BookModel>> getCurrentlyReadingBooks();
 }
 
 class BookLocalDataSourceImpl implements BookLocalDataSource {
@@ -40,5 +43,24 @@ class BookLocalDataSourceImpl implements BookLocalDataSource {
         await sharedPreferences.remove(key);
       }
     }
+  }
+
+  Future<void> saveCurrentlyReadingBooks(List<BookModel> books) async {
+    final booksJson = books.map((book) => book.toJson()).toList();
+    await sharedPreferences.setString(
+        AppConstants.currentlyReadingKey, jsonEncode(booksJson));
+  }
+
+  Future<List<BookModel>> getCurrentlyReadingBooks() async {
+    final booksString =
+        sharedPreferences.getString(AppConstants.currentlyReadingKey);
+    if (booksString != null) {
+      final booksJson = jsonDecode(booksString) as List<dynamic>;
+      return booksJson
+          .map((bookJson) =>
+              BookModel.fromJson(bookJson as Map<String, dynamic>))
+          .toList();
+    }
+    return [];
   }
 }

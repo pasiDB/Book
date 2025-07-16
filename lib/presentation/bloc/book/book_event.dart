@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../domain/entities/book.dart';
 
 abstract class BookEvent extends Equatable {
   const BookEvent();
@@ -71,4 +72,17 @@ class LoadBookContentChunk extends BookEvent {
 
   @override
   List<Object?> get props => [chunkIndex, gutenbergId, textUrl];
+}
+
+class AddBookToLibrary extends BookEvent {
+  final Book book;
+  const AddBookToLibrary(this.book);
+  @override
+  List<Object?> get props => [book];
+}
+
+class LoadCurrentlyReadingBooks extends BookEvent {
+  const LoadCurrentlyReadingBooks();
+  @override
+  List<Object?> get props => [];
 }
