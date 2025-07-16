@@ -8,6 +8,8 @@ import '../../../data/repositories/book_repository_impl.dart';
 import '../../../data/models/book_model.dart';
 import 'book_event.dart';
 import 'book_state.dart';
+import '../../../domain/entities/reading_progress.dart';
+import '../../../domain/repositories/reading_repository.dart';
 
 class BookBloc extends Bloc<BookEvent, BookState> {
   final GetBooksByTopic getBooksByTopic;
@@ -32,6 +34,8 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     on<LoadBookContentChunk>(_onLoadBookContentChunk);
     on<AddBookToLibrary>(_onAddBookToLibrary);
     on<LoadCurrentlyReadingBooks>(_onLoadCurrentlyReadingBooks);
+    on<LoadReadingProgress>(_onLoadReadingProgress);
+    on<SaveReadingProgress>(_onSaveReadingProgress);
   }
 
   static const int _chunkSize = 3000;
@@ -212,5 +216,35 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     if (localDataSource == null) return;
     final books = await localDataSource.getCurrentlyReadingBooks();
     emit(state.copyWith(currentlyReadingBooks: books));
+  }
+
+  Future<void> _onLoadReadingProgress(
+    LoadReadingProgress event,
+    Emitter<BookState> emit,
+  ) async {
+    // Use repository to load progress
+    ReadingProgress? progress;
+    if (bookRepository is ReadingRepository) {
+      progress = await (bookRepository as ReadingRepository)
+          .getReadingProgress(event.bookId);
+    }
+    emit(state.copyWith(readingProgress: progress));
+  }
+
+  Future<void> _onSaveReadingProgress(
+    SaveReadingProgress event,
+    Emitter<BookState> emit,
+  ) async {
+    if (bookRepository is ReadingRepository) {
+      await (bookRepository as ReadingRepository).updateCurrentPosition(
+        event.bookId,
+        event.chunkIndex,
+        0.0,
+        event.scrollOffset,
+      );
+      final progress = await (bookRepository as ReadingRepository)
+          .getReadingProgress(event.bookId);
+      emit(state.copyWith(readingProgress: progress));
+    }
   }
 }

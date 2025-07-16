@@ -86,3 +86,22 @@ class LoadCurrentlyReadingBooks extends BookEvent {
   @override
   List<Object?> get props => [];
 }
+
+class LoadReadingProgress extends BookEvent {
+  final int bookId;
+  const LoadReadingProgress(this.bookId);
+  @override
+  List<Object?> get props => [bookId];
+}
+
+class SaveReadingProgress extends BookEvent {
+  final int bookId;
+  final int chunkIndex;
+  final double scrollOffset;
+  const SaveReadingProgress(
+      {required this.bookId,
+      required this.chunkIndex,
+      required this.scrollOffset});
+  @override
+  List<Object?> get props => [bookId, chunkIndex, scrollOffset];
+}

@@ -2,6 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/book_model.dart';
 import '../../core/constants/app_constants.dart';
+import '../../domain/entities/reading_progress.dart';
 
 abstract class BookLocalDataSource {
   Future<void> cacheBooks(String key, List<BookModel> books);
@@ -9,6 +10,8 @@ abstract class BookLocalDataSource {
   Future<void> clearCache();
   Future<void> saveCurrentlyReadingBooks(List<BookModel> books);
   Future<List<BookModel>> getCurrentlyReadingBooks();
+  Future<void> saveReadingProgress(ReadingProgress progress);
+  Future<ReadingProgress?> getReadingProgress(int bookId);
 }
 
 class BookLocalDataSourceImpl implements BookLocalDataSource {
@@ -62,5 +65,36 @@ class BookLocalDataSourceImpl implements BookLocalDataSource {
           .toList();
     }
     return [];
+  }
+
+  @override
+  Future<void> saveReadingProgress(ReadingProgress progress) async {
+    final key = 'reading_progress_${progress.bookId}';
+    final data = {
+      'bookId': progress.bookId,
+      'progress': progress.progress,
+      'currentPosition': progress.currentPosition,
+      'scrollOffset': progress.scrollOffset,
+      'lastReadAt': progress.lastReadAt.toIso8601String(),
+      'bookmarks': progress.bookmarks,
+    };
+    await sharedPreferences.setString(key, jsonEncode(data));
+  }
+
+  @override
+  Future<ReadingProgress?> getReadingProgress(int bookId) async {
+    final key = 'reading_progress_$bookId';
+    final jsonString = sharedPreferences.getString(key);
+    if (jsonString == null) return null;
+    final data = jsonDecode(jsonString);
+    return ReadingProgress(
+      bookId: data['bookId'] as int,
+      progress: (data['progress'] as num).toDouble(),
+      currentPosition: data['currentPosition'] as int,
+      scrollOffset: (data['scrollOffset'] as num).toDouble(),
+      lastReadAt: DateTime.parse(data['lastReadAt'] as String),
+      bookmarks:
+          (data['bookmarks'] as List<dynamic>).map((e) => e as int).toList(),
+    );
   }
 }

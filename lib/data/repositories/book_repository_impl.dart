@@ -2,8 +2,10 @@ import '../../domain/entities/book.dart';
 import '../../domain/repositories/book_repository.dart';
 import '../datasources/book_remote_data_source.dart';
 import '../datasources/book_local_data_source.dart';
+import '../../domain/entities/reading_progress.dart';
+import '../../domain/repositories/reading_repository.dart';
 
-class BookRepositoryImpl implements BookRepository {
+class BookRepositoryImpl implements BookRepository, ReadingRepository {
   final BookRemoteDataSource remoteDataSource;
   final BookLocalDataSource localDataSource;
 
@@ -83,5 +85,62 @@ class BookRepositoryImpl implements BookRepository {
     } catch (e) {
       throw Exception('Failed to get book content by Gutenberg ID: $e');
     }
+  }
+
+  // ReadingRepository implementation
+  @override
+  Future<ReadingProgress?> getReadingProgress(int bookId) async {
+    return await localDataSource.getReadingProgress(bookId);
+  }
+
+  @override
+  Future<void> saveReadingProgress(ReadingProgress progress) async {
+    await localDataSource.saveReadingProgress(progress);
+  }
+
+  @override
+  Future<void> updateCurrentPosition(
+      int bookId, int position, double progress, double scrollOffset) async {
+    final existing = await getReadingProgress(bookId);
+    final updated = ReadingProgress(
+      bookId: bookId,
+      progress: progress,
+      currentPosition: position,
+      scrollOffset: scrollOffset,
+      lastReadAt: DateTime.now(),
+      bookmarks: existing?.bookmarks ?? [],
+    );
+    await saveReadingProgress(updated);
+  }
+
+  @override
+  Future<void> addBookmark(int bookId, int position) async {
+    final existing = await getReadingProgress(bookId);
+    final updated = (existing ??
+            ReadingProgress(
+              bookId: bookId,
+              progress: 0.0,
+              currentPosition: 0,
+              scrollOffset: 0.0,
+              lastReadAt: DateTime.now(),
+              bookmarks: [],
+            ))
+        .copyWith(bookmarks: [...(existing?.bookmarks ?? []), position]);
+    await saveReadingProgress(updated);
+  }
+
+  @override
+  Future<void> removeBookmark(int bookId, int position) async {
+    final existing = await getReadingProgress(bookId);
+    if (existing == null) return;
+    final updated = existing.copyWith(
+        bookmarks: existing.bookmarks.where((b) => b != position).toList());
+    await saveReadingProgress(updated);
+  }
+
+  @override
+  Future<List<ReadingProgress>> getCurrentlyReadingBooks() async {
+    // Not implemented for now
+    return [];
   }
 }

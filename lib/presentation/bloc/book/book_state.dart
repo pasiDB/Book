@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../../domain/entities/book.dart';
+import '../../../domain/entities/reading_progress.dart';
 
 class BookState extends Equatable {
   final List<Book> books;
@@ -12,6 +13,7 @@ class BookState extends Equatable {
   final int currentChunkIndex;
   final bool hasMoreContent;
   final List<Book> currentlyReadingBooks;
+  final ReadingProgress? readingProgress;
 
   const BookState({
     this.books = const [],
@@ -24,6 +26,7 @@ class BookState extends Equatable {
     this.currentChunkIndex = 0,
     this.hasMoreContent = false,
     this.currentlyReadingBooks = const [],
+    this.readingProgress,
   });
 
   BookState copyWith({
@@ -37,6 +40,7 @@ class BookState extends Equatable {
     int? currentChunkIndex,
     bool? hasMoreContent,
     List<Book>? currentlyReadingBooks,
+    ReadingProgress? readingProgress,
   }) {
     return BookState(
       books: books ?? this.books,
@@ -50,6 +54,7 @@ class BookState extends Equatable {
       hasMoreContent: hasMoreContent ?? this.hasMoreContent,
       currentlyReadingBooks:
           currentlyReadingBooks ?? this.currentlyReadingBooks,
+      readingProgress: readingProgress ?? this.readingProgress,
     );
   }
 
@@ -64,6 +69,7 @@ class BookState extends Equatable {
         bookContentChunks,
         currentChunkIndex,
         hasMoreContent,
-        currentlyReadingBooks
+        currentlyReadingBooks,
+        readingProgress,
       ];
 }

@@ -4,6 +4,7 @@ import '../bloc/book/book_bloc.dart';
 import '../bloc/book/book_event.dart';
 import '../bloc/book/book_state.dart';
 import '../../core/constants/app_constants.dart';
+import '../../domain/entities/reading_progress.dart';
 
 class BookReaderPage extends StatefulWidget {
   final int bookId;
@@ -18,16 +19,22 @@ class _BookReaderPageState extends State<BookReaderPage> {
   double fontSize = AppConstants.defaultFontSize;
   final ScrollController _scrollController = ScrollController();
   bool _isAtEnd = false;
+  bool _progressLoaded = false;
+  bool _progressRequested = false;
+  bool _contentRequested = false;
+  bool _restorationDone = false;
 
   @override
   void initState() {
     super.initState();
-    _loadBookContent();
+    // Step 1: Always load book details first
+    context.read<BookBloc>().add(LoadBookById(widget.bookId));
     _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
+    _saveReadingProgress();
     _scrollController.dispose();
     super.dispose();
   }
@@ -45,6 +52,20 @@ class _BookReaderPageState extends State<BookReaderPage> {
       setState(() {
         _isAtEnd = false;
       });
+    }
+    _saveReadingProgress();
+  }
+
+  void _saveReadingProgress() {
+    final bloc = context.read<BookBloc>();
+    final state = bloc.state;
+    if (state.selectedBook != null) {
+      bloc.add(SaveReadingProgress(
+        bookId: state.selectedBook!.id,
+        chunkIndex: state.currentChunkIndex,
+        scrollOffset:
+            _scrollController.hasClients ? _scrollController.offset : 0.0,
+      ));
     }
   }
 
@@ -93,12 +114,35 @@ class _BookReaderPageState extends State<BookReaderPage> {
       ),
       body: BlocConsumer<BookBloc, BookState>(
         listener: (context, state) {
-          if (state.selectedBook != null &&
-              (state.bookContentChunks.isEmpty || state.bookContent == null)) {
-            // Book details loaded, now load the content
+          // Step 2: When book details are loaded, load reading progress (once)
+          if (state.selectedBook != null && !_progressRequested) {
+            context
+                .read<BookBloc>()
+                .add(LoadReadingProgress(state.selectedBook!.id));
+            _progressRequested = true;
+          }
+          // Step 3: When book details are loaded, always load content (once)
+          if (state.selectedBook != null && !_contentRequested) {
             context
                 .read<BookBloc>()
                 .add(LoadBookContentByGutenbergId(state.selectedBook!.id));
+            _contentRequested = true;
+          }
+          // Step 4: When content is loaded, restore chunk and scroll (once, if progress exists)
+          if (!_restorationDone &&
+              state.bookContentChunks.isNotEmpty &&
+              state.readingProgress != null) {
+            final progress = state.readingProgress!;
+            if (progress.currentPosition < state.bookContentChunks.length) {
+              context.read<BookBloc>().add(
+                  LoadBookContentChunk(chunkIndex: progress.currentPosition));
+            }
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (progress.scrollOffset > 0.0) {
+                _scrollController.jumpTo(progress.scrollOffset);
+              }
+              _restorationDone = true;
+            });
           }
         },
         builder: (context, state) {
