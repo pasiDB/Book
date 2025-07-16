@@ -52,6 +52,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
           },
         ),
         elevation: 0,
+        automaticallyImplyLeading: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.text_fields),

@@ -9,6 +9,7 @@ class LibraryPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Library'),
         elevation: 0,
+        automaticallyImplyLeading: true,
       ),
       body: DefaultTabController(
         length: 2,

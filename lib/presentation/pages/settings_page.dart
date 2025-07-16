@@ -18,6 +18,7 @@ class _SettingsPageState extends State<SettingsPage> {
       appBar: AppBar(
         title: const Text('Settings'),
         elevation: 0,
+        automaticallyImplyLeading: true,
       ),
       body: ListView(
         children: [

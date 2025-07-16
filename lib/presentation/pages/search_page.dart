@@ -36,6 +36,7 @@ class _SearchPageState extends State<SearchPage> {
       appBar: AppBar(
         title: const Text('Search Books'),
         elevation: 0,
+        automaticallyImplyLeading: true,
       ),
       body: Column(
         children: [

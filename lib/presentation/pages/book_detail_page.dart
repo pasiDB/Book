@@ -28,6 +28,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
       appBar: AppBar(
         title: const Text('Book Details'),
         elevation: 0,
+        automaticallyImplyLeading: true,
       ),
       body: BlocBuilder<BookBloc, BookState>(
         builder: (context, state) {
@@ -134,7 +135,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
                                 ),
                           ),
                           const SizedBox(height: 8),
-                          Row(
+                          // Replace Row with Wrap for format chips
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
                             children: [
                               if (book.hasTextFormat)
                                 const Chip(
@@ -142,16 +146,12 @@ class _BookDetailPageState extends State<BookDetailPage> {
                                   backgroundColor: Colors.blue,
                                   labelStyle: TextStyle(color: Colors.white),
                                 ),
-                              if (book.hasTextFormat && (book.hasEpubFormat || book.hasHtmlFormat))
-                                const SizedBox(width: 8),
                               if (book.hasHtmlFormat)
                                 const Chip(
                                   label: Text('HTML'),
                                   backgroundColor: Colors.orange,
                                   labelStyle: TextStyle(color: Colors.white),
                                 ),
-                              if ((book.hasTextFormat || book.hasHtmlFormat) && book.hasEpubFormat)
-                                const SizedBox(width: 8),
                               if (book.hasEpubFormat)
                                 const Chip(
                                   label: Text('EPUB'),
