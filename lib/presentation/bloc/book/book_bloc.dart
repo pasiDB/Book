@@ -306,4 +306,32 @@ class BookBloc extends Bloc<BookEvent, BookState> {
       ));
     }
   }
+
+  // Load only the default category and set state
+  Future<void> loadDefaultCategoryAndSetState() async {
+    final defaultCategory = AppConstants.bookCategories.first;
+    try {
+      final books = await getBooksByTopic(defaultCategory);
+      _booksByCategoryCache[defaultCategory] = books;
+      emit(state.copyWith(
+        books: books,
+        isLoading: false,
+        category: defaultCategory,
+      ));
+    } catch (_) {}
+  }
+
+  // Preload the rest of the categories in the background
+  Future<void> preloadOtherCategoriesInBackground() async {
+    final categories = AppConstants.bookCategories;
+    final defaultCategory = categories.first;
+    for (final category in categories) {
+      if (category == defaultCategory) continue;
+      if (!_booksByCategoryCache.containsKey(category)) {
+        getBooksByTopic(category).then((books) {
+          _booksByCategoryCache[category] = books;
+        }).catchError((_) {});
+      }
+    }
+  }
 }
