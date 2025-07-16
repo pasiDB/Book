@@ -1,61 +1,42 @@
 import 'package:equatable/equatable.dart';
 import '../../../domain/entities/book.dart';
 
-abstract class BookState extends Equatable {
-  const BookState();
-
-  @override
-  List<Object?> get props => [];
-}
-
-class BookInitial extends BookState {}
-
-class BookLoading extends BookState {}
-
-class BooksLoaded extends BookState {
+class BookState extends Equatable {
   final List<Book> books;
+  final Book? selectedBook;
   final String? category;
+  final String? bookContent;
+  final bool isLoading;
+  final String? error;
 
-  const BooksLoaded(this.books, {this.category});
+  const BookState({
+    this.books = const [],
+    this.selectedBook,
+    this.category,
+    this.bookContent,
+    this.isLoading = false,
+    this.error,
+  });
 
-  @override
-  List<Object?> get props => [books, category];
-}
-
-class BookLoaded extends BookState {
-  final Book book;
-
-  const BookLoaded(this.book);
-
-  @override
-  List<Object?> get props => [book];
-}
-
-class BookError extends BookState {
-  final String message;
-
-  const BookError(this.message);
-
-  @override
-  List<Object?> get props => [message];
-}
-
-class BookContentLoading extends BookState {}
-
-class BookContentLoaded extends BookState {
-  final String content;
-
-  const BookContentLoaded(this.content);
-
-  @override
-  List<Object?> get props => [content];
-}
-
-class BookContentError extends BookState {
-  final String message;
-
-  const BookContentError(this.message);
+  BookState copyWith({
+    List<Book>? books,
+    Book? selectedBook,
+    String? category,
+    String? bookContent,
+    bool? isLoading,
+    String? error,
+  }) {
+    return BookState(
+      books: books ?? this.books,
+      selectedBook: selectedBook ?? this.selectedBook,
+      category: category ?? this.category,
+      bookContent: bookContent ?? this.bookContent,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+    );
+  }
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props =>
+      [books, selectedBook, category, bookContent, isLoading, error];
 }

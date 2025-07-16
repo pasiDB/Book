@@ -26,7 +26,12 @@ class _SearchPageState extends State<SearchPage> {
 
   void _performSearch(String query) {
     if (query.trim().isNotEmpty) {
-      context.read<BookBloc>().add(SearchBooksEvent(query));
+      final bloc = context.read<BookBloc>();
+      final state = bloc.state;
+      // Only search if not already loaded for this query
+      if (state.books.isEmpty) {
+        bloc.add(SearchBooksEvent(query));
+      }
     }
   }
 
@@ -76,106 +81,49 @@ class _SearchPageState extends State<SearchPage> {
           Expanded(
             child: BlocBuilder<BookBloc, BookState>(
               builder: (context, state) {
-                if (state is BookLoading) {
+                if (state.isLoading) {
                   return const LoadingShimmer();
-                } else if (state is BooksLoaded) {
-                  if (state.books.isEmpty) {
-                    return const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.search_off,
-                            size: 64,
-                            color: Colors.grey,
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            'No books found',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Try searching for different keywords',
-                            style: TextStyle(
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                  return ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: state.books.length,
-                    itemBuilder: (context, index) {
-                      final book = state.books[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: BookCard(book: book),
-                      );
-                    },
-                  );
-                } else if (state is BookError) {
-                  return Center(
+                } else if (state.error != null) {
+                  return Center(child: Text('Error:  {state.error}'));
+                } else if (state.books.isEmpty) {
+                  return const Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
-                          Icons.error_outline,
+                        Icon(
+                          Icons.search_off,
                           size: 64,
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         Text(
-                          'Error: ${state.message}',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.titleMedium,
+                          'No books found',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            if (_searchController.text.trim().isNotEmpty) {
-                              _performSearch(_searchController.text);
-                            }
-                          },
-                          child: const Text('Retry'),
+                        SizedBox(height: 8),
+                        Text(
+                          'Try searching for different keywords',
+                          style: TextStyle(
+                            color: Colors.grey,
+                          ),
                         ),
                       ],
                     ),
                   );
                 }
-
-                // Initial state - show search suggestions
-                return const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.search,
-                        size: 64,
-                        color: Colors.grey,
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        'Search for your favorite books',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Try searching by title, author, or subject',
-                        style: TextStyle(
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: state.books.length,
+                  itemBuilder: (context, index) {
+                    final book = state.books[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: BookCard(book: book),
+                    );
+                  },
                 );
               },
             ),

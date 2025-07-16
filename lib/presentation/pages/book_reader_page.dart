@@ -45,9 +45,9 @@ class _BookReaderPageState extends State<BookReaderPage> {
         ),
         title: BlocBuilder<BookBloc, BookState>(
           builder: (context, state) {
-            if (state is BookLoaded) {
+            if (state.selectedBook != null) {
               return Text(
-                state.book.title,
+                state.selectedBook!.title,
                 style: const TextStyle(fontSize: 16),
                 overflow: TextOverflow.ellipsis,
               );
@@ -75,16 +75,16 @@ class _BookReaderPageState extends State<BookReaderPage> {
       ),
       body: BlocConsumer<BookBloc, BookState>(
         listener: (context, state) {
-          if (state is BookLoaded) {
+          if (state.selectedBook != null) {
             // Book details loaded, now load the content
             // Try to load content using Gutenberg ID first (more reliable)
             context
                 .read<BookBloc>()
-                .add(LoadBookContentByGutenbergId(state.book.id));
+                .add(LoadBookContentByGutenbergId(state.selectedBook!.id));
           }
         },
         builder: (context, state) {
-          if (state is BookContentLoading) {
+          if (state.isLoading) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -104,19 +104,19 @@ class _BookReaderPageState extends State<BookReaderPage> {
                 ],
               ),
             );
-          } else if (state is BookContentLoaded) {
+          } else if (state.bookContent != null) {
             return SingleChildScrollView(
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
               child: SelectableText(
-                state.content,
+                state.bookContent!,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       fontSize: fontSize,
                       height: 1.6,
                     ),
               ),
             );
-          } else if (state is BookContentError) {
+          } else if (state.error != null) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -128,62 +128,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Error: ${state.message}',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'The app is trying to load content using a CORS proxy. If this continues, the book content may be temporarily unavailable.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: _loadBookContent,
-                        child: const Text('Retry'),
-                      ),
-                      const SizedBox(width: 16),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Try loading content directly by Gutenberg ID
-                          context
-                              .read<BookBloc>()
-                              .add(LoadBookContentByGutenbergId(widget.bookId));
-                        },
-                        child: const Text('Try Direct Load'),
-                      ),
-                      const SizedBox(width: 16),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Show book details to get the URL
-                          context
-                              .read<BookBloc>()
-                              .add(LoadBookById(widget.bookId));
-                        },
-                        child: const Text('View Book Info'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          } else if (state is BookError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error: ${state.message}',
+                    'Error:  {state.error}',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),

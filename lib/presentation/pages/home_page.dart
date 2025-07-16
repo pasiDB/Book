@@ -21,10 +21,16 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    // Load first category by default
-    if (AppConstants.bookCategories.isNotEmpty) {
-      selectedCategory = AppConstants.bookCategories.first;
-      context.read<BookBloc>().add(LoadBooksByTopic(selectedCategory!));
+    final bloc = context.read<BookBloc>();
+    final state = bloc.state;
+    // Only set selectedCategory if not already set
+    if (selectedCategory == null && AppConstants.bookCategories.isNotEmpty) {
+      if (state.category != null) {
+        selectedCategory = state.category;
+      } else {
+        selectedCategory = AppConstants.bookCategories.first;
+        bloc.add(LoadBooksByTopic(selectedCategory!));
+      }
     }
   }
 
@@ -35,95 +41,60 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Book Reader'),
         elevation: 0,
       ),
-      body: Column(
-        children: [
-          // Categories Section
-          Container(
-            height: 120,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: AppConstants.bookCategories.length,
-              itemBuilder: (context, index) {
-                final category = AppConstants.bookCategories[index];
-                final isSelected = selectedCategory == category;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: CategoryCard(
-                    category: category,
-                    isSelected: isSelected,
-                    onTap: () {
-                      setState(() {
-                        selectedCategory = category;
-                      });
-                      context.read<BookBloc>().add(LoadBooksByTopic(category));
+      body: BlocBuilder<BookBloc, BookState>(
+        builder: (context, state) {
+          final currentCategory = state.category ?? selectedCategory;
+          if (state.isLoading) {
+            return const LoadingShimmer();
+          } else if (state.error != null) {
+            return Center(child: Text('Error:  {state.error}'));
+          } else if (state.books.isNotEmpty) {
+            return Column(
+              children: [
+                // Categories Section
+                Container(
+                  height: 120,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: AppConstants.bookCategories.length,
+                    itemBuilder: (context, index) {
+                      final category = AppConstants.bookCategories[index];
+                      final isSelected = currentCategory == category;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: CategoryCard(
+                          category: category,
+                          isSelected: isSelected,
+                          onTap: () {
+                            setState(() {
+                              selectedCategory = category;
+                            });
+                            context
+                                .read<BookBloc>()
+                                .add(LoadBooksByTopic(category));
+                          },
+                        ),
+                      );
                     },
                   ),
-                );
-              },
-            ),
-          ),
-
-          // Books Section
-          Expanded(
-            child: BlocBuilder<BookBloc, BookState>(
-              builder: (context, state) {
-                if (state is BookLoading) {
-                  return const LoadingShimmer();
-                } else if (state is BooksLoaded) {
-                  if (state.books.isEmpty) {
-                    return const Center(
-                      child: Text('No books found for this category'),
-                    );
-                  }
-                  return ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                ),
+                // Books Section
+                Expanded(
+                  child: ListView.builder(
                     itemCount: state.books.length,
                     itemBuilder: (context, index) {
                       final book = state.books[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: BookCard(book: book),
-                      );
+                      return BookCard(book: book);
                     },
-                  );
-                } else if (state is BookError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: Colors.red,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error: ${state.message}',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            if (selectedCategory != null) {
-                              context.read<BookBloc>().add(
-                                    LoadBooksByTopic(selectedCategory!),
-                                  );
-                            }
-                          },
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-            ),
-          ),
-        ],
+                  ),
+                ),
+              ],
+            );
+          }
+          return const SizedBox.shrink();
+        },
       ),
     );
   }

@@ -29,6 +29,11 @@ class BookRepositoryImpl implements BookRepository {
     }
   }
 
+  // Add a method to get cached books by topic
+  Future<List<Book>> getCachedBooksByTopic(String topic) async {
+    return await localDataSource.getCachedBooks('cached_books_$topic');
+  }
+
   @override
   Future<List<Book>> searchBooks(String query) async {
     try {
@@ -72,7 +77,8 @@ class BookRepositoryImpl implements BookRepository {
   @override
   Future<String> getBookContentByGutenbergId(int gutenbergId) async {
     try {
-      final content = await remoteDataSource.getBookContentByGutenbergId(gutenbergId);
+      final content =
+          await remoteDataSource.getBookContentByGutenbergId(gutenbergId);
       return content;
     } catch (e) {
       throw Exception('Failed to get book content by Gutenberg ID: $e');

@@ -7,4 +7,6 @@ abstract class BookRepository {
   Future<List<Book>> getBooksByPage(int page);
   Future<String> getBookContent(String textUrl);
   Future<String> getBookContentByGutenbergId(int gutenbergId);
+  // Add method for cached books
+  Future<List<Book>> getCachedBooksByTopic(String topic);
 }

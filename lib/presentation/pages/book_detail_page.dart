@@ -36,11 +36,11 @@ class _BookDetailPageState extends State<BookDetailPage> {
       ),
       body: BlocBuilder<BookBloc, BookState>(
         builder: (context, state) {
-          if (state is BookLoading) {
+          if (state.isLoading) {
             return const Center(child: CircularProgressIndicator());
-          } else if (state is BookLoaded) {
-            return _buildBookDetails(state.book);
-          } else if (state is BookError) {
+          } else if (state.selectedBook != null) {
+            return _buildBookDetails(state.selectedBook!);
+          } else if (state.error != null) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -52,7 +52,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Error: ${state.message}',
+                    'Error: ${state.error}',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),

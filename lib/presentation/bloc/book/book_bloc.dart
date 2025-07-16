@@ -20,7 +20,7 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     required this.getBookContent,
     required this.getBookContentByGutenbergId,
     required this.bookRepository,
-  }) : super(BookInitial()) {
+  }) : super(const BookState()) {
     on<LoadBooksByTopic>(_onLoadBooksByTopic);
     on<SearchBooksEvent>(_onSearchBooks);
     on<LoadBookById>(_onLoadBookById);
@@ -33,12 +33,17 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     LoadBooksByTopic event,
     Emitter<BookState> emit,
   ) async {
-    emit(BookLoading());
+    emit(state.copyWith(isLoading: true, error: null, category: event.topic));
     try {
       final books = await getBooksByTopic(event.topic);
-      emit(BooksLoaded(books, category: event.topic));
+      emit(state.copyWith(
+        books: books,
+        isLoading: false,
+        error: null,
+        category: event.topic,
+      ));
     } catch (e) {
-      emit(BookError(e.toString()));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
@@ -47,16 +52,15 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     Emitter<BookState> emit,
   ) async {
     if (event.query.trim().isEmpty) {
-      emit(const BooksLoaded([]));
+      emit(state.copyWith(books: [], isLoading: false, error: null));
       return;
     }
-
-    emit(BookLoading());
+    emit(state.copyWith(isLoading: true, error: null));
     try {
       final books = await searchBooks(event.query);
-      emit(BooksLoaded(books));
+      emit(state.copyWith(books: books, isLoading: false, error: null));
     } catch (e) {
-      emit(BookError(e.toString()));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
@@ -64,16 +68,16 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     LoadBookById event,
     Emitter<BookState> emit,
   ) async {
-    emit(BookLoading());
+    emit(state.copyWith(isLoading: true, error: null));
     try {
       final book = await bookRepository.getBookById(event.bookId);
       if (book != null) {
-        emit(BookLoaded(book));
+        emit(state.copyWith(selectedBook: book, isLoading: false, error: null));
       } else {
-        emit(const BookError('Book not found'));
+        emit(state.copyWith(isLoading: false, error: 'Book not found'));
       }
     } catch (e) {
-      emit(BookError(e.toString()));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
@@ -81,12 +85,12 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     LoadBooksByPage event,
     Emitter<BookState> emit,
   ) async {
-    emit(BookLoading());
+    emit(state.copyWith(isLoading: true, error: null));
     try {
       final books = await bookRepository.getBooksByPage(event.page);
-      emit(BooksLoaded(books));
+      emit(state.copyWith(books: books, isLoading: false, error: null));
     } catch (e) {
-      emit(BookError(e.toString()));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
@@ -94,12 +98,12 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     LoadBookContent event,
     Emitter<BookState> emit,
   ) async {
-    emit(BookContentLoading());
+    emit(state.copyWith(isLoading: true, error: null));
     try {
       final content = await getBookContent(event.textUrl);
-      emit(BookContentLoaded(content));
+      emit(state.copyWith(bookContent: content, isLoading: false, error: null));
     } catch (e) {
-      emit(BookContentError(e.toString()));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
@@ -107,12 +111,12 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     LoadBookContentByGutenbergId event,
     Emitter<BookState> emit,
   ) async {
-    emit(BookContentLoading());
+    emit(state.copyWith(isLoading: true, error: null));
     try {
       final content = await getBookContentByGutenbergId(event.gutenbergId);
-      emit(BookContentLoaded(content));
+      emit(state.copyWith(bookContent: content, isLoading: false, error: null));
     } catch (e) {
-      emit(BookContentError(e.toString()));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 }
