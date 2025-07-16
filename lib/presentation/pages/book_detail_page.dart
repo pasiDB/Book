@@ -85,14 +85,28 @@ class _BookDetailPageState extends State<BookDetailPage> {
                 child: SizedBox(
                   width: 120,
                   height: 180,
-                  child: Container(
-                    color: Colors.grey[300],
-                    child: const Icon(
-                      Icons.book,
-                      size: 60,
-                      color: Colors.grey,
-                    ),
-                  ),
+                  child: book.coverImageUrl != null
+                      ? Image.network(
+                          book.coverImageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                            color: Colors.grey[300],
+                            child: const Icon(
+                              Icons.book,
+                              size: 60,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        )
+                      : Container(
+                          color: Colors.grey[300],
+                          child: const Icon(
+                            Icons.book,
+                            size: 60,
+                            color: Colors.grey,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(width: 16),
