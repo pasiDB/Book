@@ -26,9 +26,13 @@ class _BookDetailPageState extends State<BookDetailPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
         title: const Text('Book Details'),
         elevation: 0,
-        automaticallyImplyLeading: true,
+        automaticallyImplyLeading: false,
       ),
       body: BlocBuilder<BookBloc, BookState>(
         builder: (context, state) {
@@ -190,7 +194,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: book.hasReadableFormat
-                      ? () => context.go('/reader/${book.id}')
+                      ? () => context.push('/reader/${book.id}')
                       : null,
                   icon: const Icon(Icons.menu_book),
                   label: const Text('Read Now'),

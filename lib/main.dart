@@ -75,11 +75,17 @@ class MyApp extends StatelessWidget {
       bookRepository: bookRepository,
     );
 
+    // Add navigator keys
+    final _rootNavigatorKey = GlobalKey<NavigatorState>();
+    final _shellNavigatorKey = GlobalKey<NavigatorState>();
+
     // Configure routing
     final router = GoRouter(
+      navigatorKey: _rootNavigatorKey,
       initialLocation: '/',
       routes: [
         ShellRoute(
+          navigatorKey: _shellNavigatorKey,
           builder: (context, state, child) => MainScaffold(child: child),
           routes: [
             GoRoute(
@@ -102,6 +108,7 @@ class MyApp extends StatelessWidget {
         ),
         GoRoute(
           path: '/book/:id',
+          parentNavigatorKey: _rootNavigatorKey,
           builder: (context, state) {
             final bookId = int.parse(state.pathParameters['id']!);
             return BookDetailPage(bookId: bookId);
@@ -109,6 +116,7 @@ class MyApp extends StatelessWidget {
         ),
         GoRoute(
           path: '/reader/:id',
+          parentNavigatorKey: _rootNavigatorKey,
           builder: (context, state) {
             final bookId = int.parse(state.pathParameters['id']!);
             return BookReaderPage(bookId: bookId);

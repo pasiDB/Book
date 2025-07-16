@@ -39,6 +39,10 @@ class _BookReaderPageState extends State<BookReaderPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
         title: BlocBuilder<BookBloc, BookState>(
           builder: (context, state) {
             if (state is BookLoaded) {
@@ -52,7 +56,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
           },
         ),
         elevation: 0,
-        automaticallyImplyLeading: true,
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.text_fields),
