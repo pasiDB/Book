@@ -60,3 +60,15 @@ class LoadBookContentByGutenbergId extends BookEvent {
   @override
   List<Object?> get props => [gutenbergId];
 }
+
+class LoadBookContentChunk extends BookEvent {
+  final int chunkIndex;
+  final int? gutenbergId;
+  final String? textUrl;
+
+  const LoadBookContentChunk(
+      {required this.chunkIndex, this.gutenbergId, this.textUrl});
+
+  @override
+  List<Object?> get props => [chunkIndex, gutenbergId, textUrl];
+}

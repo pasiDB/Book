@@ -75,9 +75,9 @@ class _BookReaderPageState extends State<BookReaderPage> {
       ),
       body: BlocConsumer<BookBloc, BookState>(
         listener: (context, state) {
-          if (state.selectedBook != null) {
+          if (state.selectedBook != null &&
+              (state.bookContentChunks.isEmpty || state.bookContent == null)) {
             // Book details loaded, now load the content
-            // Try to load content using Gutenberg ID first (more reliable)
             context
                 .read<BookBloc>()
                 .add(LoadBookContentByGutenbergId(state.selectedBook!.id));
@@ -105,16 +105,35 @@ class _BookReaderPageState extends State<BookReaderPage> {
               ),
             );
           } else if (state.bookContent != null) {
-            return SingleChildScrollView(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              child: SelectableText(
-                state.bookContent!,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontSize: fontSize,
-                      height: 1.6,
+            return Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    child: SelectableText(
+                      state.bookContent!,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontSize: fontSize,
+                            height: 1.6,
+                          ),
                     ),
-              ),
+                  ),
+                ),
+                if (state.hasMoreContent)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        context.read<BookBloc>().add(
+                              LoadBookContentChunk(
+                                  chunkIndex: state.currentChunkIndex + 1),
+                            );
+                      },
+                      child: const Text('Read next'),
+                    ),
+                  ),
+              ],
             );
           } else if (state.error != null) {
             return Center(

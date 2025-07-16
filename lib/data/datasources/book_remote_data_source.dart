@@ -63,46 +63,49 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
 
   @override
   Future<String> getBookContent(String contentUrl) async {
+    print('[RemoteDataSource] Fetching book content from: $contentUrl');
     try {
-      // Try direct fetch first
       final response = await dio.get(contentUrl);
       String content = response.data.toString();
-
+      print(
+          '[RemoteDataSource] Book content fetched, length: ${content.length}');
       // If it's HTML content, try to extract text
       if (contentUrl.contains('text/html') || content.contains('<html>')) {
         content = _extractTextFromHtml(content);
       }
-
       return content;
     } catch (e) {
+      print('[RemoteDataSource] Error fetching book content: $e');
       // If direct fetch fails due to CORS, try using a CORS proxy
       try {
         final corsProxyUrl =
             'https://api.allorigins.win/raw?url=${Uri.encodeComponent(contentUrl)}';
         final response = await dio.get(corsProxyUrl);
         String content = response.data.toString();
-
-        // If it's HTML content, try to extract text
+        print(
+            '[RemoteDataSource] Book content fetched via CORS proxy, length: ${content.length}');
         if (contentUrl.contains('text/html') || content.contains('<html>')) {
           content = _extractTextFromHtml(content);
         }
-
         return content;
       } catch (proxyError) {
+        print(
+            '[RemoteDataSource] Error fetching book content via CORS proxy: $proxyError');
         // If both direct and proxy fail, try alternative CORS proxies
         try {
           final alternativeProxyUrl =
               'https://cors-anywhere.herokuapp.com/${Uri.encodeComponent(contentUrl)}';
           final response = await dio.get(alternativeProxyUrl);
           String content = response.data.toString();
-
+          print(
+              '[RemoteDataSource] Book content fetched via alternative proxy, length: ${content.length}');
           if (contentUrl.contains('text/html') || content.contains('<html>')) {
             content = _extractTextFromHtml(content);
           }
-
           return content;
         } catch (alternativeError) {
-          // If all proxies fail, return fallback content
+          print(
+              '[RemoteDataSource] Error fetching book content via alternative proxy: $alternativeError');
           return _generateFallbackContent(contentUrl);
         }
       }
@@ -111,11 +114,11 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
 
   @override
   Future<String> getBookContentByGutenbergId(int gutenbergId) async {
+    print(
+        '[RemoteDataSource] Fetching book content by Gutenberg ID: $gutenbergId');
     // Construct the Project Gutenberg URL for the specific book
     final gutenbergUrl =
         'https://www.gutenberg.org/cache/epub/$gutenbergId/pg$gutenbergId.txt';
-
-    // Try multiple approaches to fetch the content
     final List<String> proxyUrls = [
       gutenbergUrl, // Direct fetch
       'https://api.allorigins.win/raw?url=${Uri.encodeComponent(gutenbergUrl)}',
@@ -123,7 +126,6 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
       'https://thingproxy.freeboard.io/fetch/${Uri.encodeComponent(gutenbergUrl)}',
       'https://corsproxy.io/?${Uri.encodeComponent(gutenbergUrl)}',
     ];
-
     for (String url in proxyUrls) {
       try {
         final response = await dio.get(
@@ -141,25 +143,21 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
             validateStatus: (status) => status != null && status < 500,
           ),
         );
-
         if (response.statusCode == 200 && response.data != null) {
           String content = response.data.toString();
-
-          // Clean up the content - remove Project Gutenberg header and footer
+          print(
+              '[RemoteDataSource] Book content fetched from $url, length: ${content.length}');
           content = _cleanGutenbergContent(content);
-
-          // Verify we got actual content
           if (content.length > 1000) {
             return content;
           }
         }
       } catch (e) {
-        // Continue to next proxy
+        print('[RemoteDataSource] Error fetching book content from $url: $e');
         continue;
       }
     }
-
-    // If all proxies fail, return fallback content
+    print('[RemoteDataSource] All proxies failed, returning fallback content.');
     return _generateFallbackContent(gutenbergUrl);
   }
 
@@ -238,7 +236,7 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
     } else if (contentUrl.contains('1342')) {
       return _getPrideAndPrejudiceSample();
     }
-    
+
     return '''
 Chapter 1: Introduction
 

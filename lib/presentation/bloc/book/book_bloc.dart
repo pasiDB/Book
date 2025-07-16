@@ -27,6 +27,22 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     on<LoadBooksByPage>(_onLoadBooksByPage);
     on<LoadBookContent>(_onLoadBookContent);
     on<LoadBookContentByGutenbergId>(_onLoadBookContentByGutenbergId);
+    on<LoadBookContentChunk>(_onLoadBookContentChunk);
+  }
+
+  static const int _chunkSize = 3000;
+
+  List<String> _splitContentIntoChunks(String content) {
+    List<String> chunks = [];
+    int start = 0;
+    while (start < content.length) {
+      int end = (start + _chunkSize < content.length)
+          ? start + _chunkSize
+          : content.length;
+      chunks.add(content.substring(start, end));
+      start = end;
+    }
+    return chunks;
   }
 
   Future<void> _onLoadBooksByTopic(
@@ -98,11 +114,22 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     LoadBookContent event,
     Emitter<BookState> emit,
   ) async {
+    print('[BLoC] Loading book content for URL: ${event.textUrl}');
     emit(state.copyWith(isLoading: true, error: null));
     try {
       final content = await getBookContent(event.textUrl);
-      emit(state.copyWith(bookContent: content, isLoading: false, error: null));
+      print('[BLoC] Book content loaded, length: ${content.length}');
+      final chunks = _splitContentIntoChunks(content);
+      emit(state.copyWith(
+        bookContent: chunks.isNotEmpty ? chunks[0] : '',
+        bookContentChunks: chunks,
+        currentChunkIndex: 0,
+        hasMoreContent: chunks.length > 1,
+        isLoading: false,
+        error: null,
+      ));
     } catch (e) {
+      print('[BLoC] Error loading book content: $e');
       emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
@@ -111,12 +138,44 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     LoadBookContentByGutenbergId event,
     Emitter<BookState> emit,
   ) async {
+    print('[BLoC] Loading book content by Gutenberg ID: ${event.gutenbergId}');
     emit(state.copyWith(isLoading: true, error: null));
     try {
       final content = await getBookContentByGutenbergId(event.gutenbergId);
-      emit(state.copyWith(bookContent: content, isLoading: false, error: null));
+      print(
+          '[BLoC] Book content loaded by Gutenberg ID, length: ${content.length}');
+      final chunks = _splitContentIntoChunks(content);
+      emit(state.copyWith(
+        bookContent: chunks.isNotEmpty ? chunks[0] : '',
+        bookContentChunks: chunks,
+        currentChunkIndex: 0,
+        hasMoreContent: chunks.length > 1,
+        isLoading: false,
+        error: null,
+      ));
     } catch (e) {
+      print('[BLoC] Error loading book content by Gutenberg ID: $e');
       emit(state.copyWith(isLoading: false, error: e.toString()));
+    }
+  }
+
+  Future<void> _onLoadBookContentChunk(
+    LoadBookContentChunk event,
+    Emitter<BookState> emit,
+  ) async {
+    print('[BLoC] Loading book content chunk: ${event.chunkIndex}');
+    final chunks = state.bookContentChunks;
+    final nextIndex = event.chunkIndex;
+    if (nextIndex < chunks.length) {
+      final newContent = chunks.sublist(0, nextIndex + 1).join('');
+      emit(state.copyWith(
+        bookContent: newContent,
+        currentChunkIndex: nextIndex,
+        hasMoreContent: nextIndex < chunks.length - 1,
+      ));
+      print('[BLoC] Book content chunk loaded, up to chunk: $nextIndex');
+    } else {
+      print('[BLoC] No more chunks to load.');
     }
   }
 }

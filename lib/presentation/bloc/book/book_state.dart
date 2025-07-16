@@ -8,6 +8,9 @@ class BookState extends Equatable {
   final String? bookContent;
   final bool isLoading;
   final String? error;
+  final List<String> bookContentChunks;
+  final int currentChunkIndex;
+  final bool hasMoreContent;
 
   const BookState({
     this.books = const [],
@@ -16,6 +19,9 @@ class BookState extends Equatable {
     this.bookContent,
     this.isLoading = false,
     this.error,
+    this.bookContentChunks = const [],
+    this.currentChunkIndex = 0,
+    this.hasMoreContent = false,
   });
 
   BookState copyWith({
@@ -25,6 +31,9 @@ class BookState extends Equatable {
     String? bookContent,
     bool? isLoading,
     String? error,
+    List<String>? bookContentChunks,
+    int? currentChunkIndex,
+    bool? hasMoreContent,
   }) {
     return BookState(
       books: books ?? this.books,
@@ -33,10 +42,22 @@ class BookState extends Equatable {
       bookContent: bookContent ?? this.bookContent,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      bookContentChunks: bookContentChunks ?? this.bookContentChunks,
+      currentChunkIndex: currentChunkIndex ?? this.currentChunkIndex,
+      hasMoreContent: hasMoreContent ?? this.hasMoreContent,
     );
   }
 
   @override
-  List<Object?> get props =>
-      [books, selectedBook, category, bookContent, isLoading, error];
+  List<Object?> get props => [
+        books,
+        selectedBook,
+        category,
+        bookContent,
+        isLoading,
+        error,
+        bookContentChunks,
+        currentChunkIndex,
+        hasMoreContent
+      ];
 }
