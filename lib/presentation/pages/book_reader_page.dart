@@ -5,6 +5,7 @@ import '../bloc/book/book_event.dart';
 import '../bloc/book/book_state.dart';
 import '../../core/constants/app_constants.dart';
 import '../../domain/entities/reading_progress.dart';
+import '../../presentation/widgets/modern_loading_indicator.dart';
 
 class BookReaderPage extends StatefulWidget {
   final int bookId;
@@ -162,25 +163,9 @@ class _BookReaderPageState extends State<BookReaderPage> {
             return Column(
               children: [
                 if (progressBar != null) progressBar,
-                Expanded(
+                const Expanded(
                   child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const CircularProgressIndicator(),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Loading book content...',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'This may take a moment as we fetch the content from Project Gutenberg.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
-                        ),
-                      ],
-                    ),
+                    child: ModernLoadingIndicator(),
                   ),
                 ),
               ],

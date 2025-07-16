@@ -105,3 +105,10 @@ class SaveReadingProgress extends BookEvent {
   @override
   List<Object?> get props => [bookId, chunkIndex, scrollOffset];
 }
+
+class PreloadBooksByTopic extends BookEvent {
+  final String topic;
+  const PreloadBooksByTopic(this.topic);
+  @override
+  List<Object?> get props => [topic];
+}

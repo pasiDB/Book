@@ -10,6 +10,9 @@ import 'book_event.dart';
 import 'book_state.dart';
 import '../../../domain/entities/reading_progress.dart';
 import '../../../domain/repositories/reading_repository.dart';
+import '../../../domain/entities/book.dart';
+import '../../../core/constants/app_constants.dart';
+import 'dart:async';
 
 class BookBloc extends Bloc<BookEvent, BookState> {
   final GetBooksByTopic getBooksByTopic;
@@ -17,6 +20,9 @@ class BookBloc extends Bloc<BookEvent, BookState> {
   final GetBookContent getBookContent;
   final GetBookContentByGutenbergId getBookContentByGutenbergId;
   final BookRepository bookRepository;
+
+  // In-memory cache for books by category
+  final Map<String, List<Book>> _booksByCategoryCache = {};
 
   BookBloc({
     required this.getBooksByTopic,
@@ -26,6 +32,7 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     required this.bookRepository,
   }) : super(const BookState()) {
     on<LoadBooksByTopic>(_onLoadBooksByTopic);
+    on<PreloadBooksByTopic>(_onPreloadBooksByTopic);
     on<SearchBooksEvent>(_onSearchBooks);
     on<LoadBookById>(_onLoadBookById);
     on<LoadBooksByPage>(_onLoadBooksByPage);
@@ -36,6 +43,17 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     on<LoadCurrentlyReadingBooks>(_onLoadCurrentlyReadingBooks);
     on<LoadReadingProgress>(_onLoadReadingProgress);
     on<SaveReadingProgress>(_onSaveReadingProgress);
+  }
+
+  Future<void> _onPreloadBooksByTopic(
+    PreloadBooksByTopic event,
+    Emitter<BookState> emit,
+  ) async {
+    if (_booksByCategoryCache.containsKey(event.topic)) return;
+    try {
+      final books = await getBooksByTopic(event.topic);
+      _booksByCategoryCache[event.topic] = books;
+    } catch (_) {}
   }
 
   static const int _chunkSize = 3000;
@@ -58,8 +76,20 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     Emitter<BookState> emit,
   ) async {
     emit(state.copyWith(isLoading: true, error: null, category: event.topic));
+    // Check cache first
+    if (_booksByCategoryCache.containsKey(event.topic)) {
+      emit(state.copyWith(
+        books: _booksByCategoryCache[event.topic]!,
+        isLoading: false,
+        error: null,
+        category: event.topic,
+      ));
+      return;
+    }
     try {
       final books = await getBooksByTopic(event.topic);
+      // Cache the result
+      _booksByCategoryCache[event.topic] = books;
       emit(state.copyWith(
         books: books,
         isLoading: false,
@@ -245,6 +275,35 @@ class BookBloc extends Bloc<BookEvent, BookState> {
       final progress = await (bookRepository as ReadingRepository)
           .getReadingProgress(event.bookId);
       emit(state.copyWith(readingProgress: progress));
+    }
+  }
+
+  // Public method to get cached books for a category
+  List<Book>? getCachedBooksForCategory(String category) {
+    return _booksByCategoryCache[category];
+  }
+
+  // Optimized method to preload all categories and set state for default
+  Future<void> preloadAllCategoriesAndSetDefault() async {
+    final categories = AppConstants.bookCategories;
+    final futures = <Future<void>>[];
+    for (final category in categories) {
+      if (!_booksByCategoryCache.containsKey(category)) {
+        futures.add(getBooksByTopic(category).then((books) {
+          _booksByCategoryCache[category] = books;
+        }).catchError((_) {}));
+      }
+    }
+    await Future.wait(futures);
+    // Set state for default category
+    final defaultCategory = categories.first;
+    final cachedBooks = _booksByCategoryCache[defaultCategory];
+    if (cachedBooks != null && cachedBooks.isNotEmpty) {
+      emit(state.copyWith(
+        books: cachedBooks,
+        isLoading: false,
+        category: defaultCategory,
+      ));
     }
   }
 }

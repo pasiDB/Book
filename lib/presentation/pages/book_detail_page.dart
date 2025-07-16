@@ -5,6 +5,7 @@ import '../bloc/book/book_bloc.dart';
 import '../bloc/book/book_event.dart';
 import '../bloc/book/book_state.dart';
 import '../../domain/entities/book.dart';
+import '../widgets/modern_loading_indicator.dart';
 
 class BookDetailPage extends StatefulWidget {
   final int bookId;
@@ -29,7 +30,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFFE91E63)), // Pink
           onPressed: () => Navigator.of(context).maybePop(),
         ),
         title: const Text('Book Details'),
@@ -59,7 +60,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
         child: BlocBuilder<BookBloc, BookState>(
           builder: (context, state) {
             if (state.isLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return const ModernLoadingIndicator();
             } else if (state.selectedBook != null) {
               final alreadyInLibrary = state.currentlyReadingBooks
                   .any((b) => b.id == state.selectedBook!.id);

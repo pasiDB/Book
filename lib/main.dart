@@ -16,12 +16,14 @@ import 'domain/usecases/search_books.dart';
 import 'domain/usecases/get_book_content.dart';
 import 'domain/usecases/get_book_content_by_gutenberg_id.dart';
 import 'presentation/bloc/book/book_bloc.dart';
+import 'presentation/bloc/book/book_event.dart';
 import 'presentation/pages/home_page.dart';
 import 'presentation/pages/search_page.dart';
 import 'presentation/pages/library_page.dart';
 import 'presentation/pages/book_detail_page.dart';
 import 'presentation/pages/book_reader_page.dart';
 import 'presentation/pages/settings_page.dart';
+import 'presentation/widgets/modern_loading_indicator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -75,11 +77,100 @@ class MyApp extends StatelessWidget {
       bookRepository: bookRepository,
     );
 
-    // Add navigator keys
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<BookBloc>.value(value: bookBloc),
+      ],
+      child: MaterialApp(
+        title: 'Book Reader',
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.system,
+        debugShowCheckedModeBanner: false,
+        home: SplashScreen(bookBloc: bookBloc),
+      ),
+    );
+  }
+}
+
+class SplashScreen extends StatefulWidget {
+  final BookBloc bookBloc;
+  const SplashScreen({super.key, required this.bookBloc});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  double _progress = 0.0;
+  bool _loadingDone = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _preloadAllCategories();
+  }
+
+  Future<void> _preloadAllCategories() async {
+    await widget.bookBloc.preloadAllCategoriesAndSetDefault();
+    setState(() {
+      _progress = 1.0;
+    });
+    await Future.delayed(const Duration(milliseconds: 500));
+    setState(() {
+      _loadingDone = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loadingDone) {
+      // Use router-based navigation after splash
+      return const _MainAppRouter();
+    }
+    final theme = Theme.of(context);
+    return Scaffold(
+      backgroundColor: theme.colorScheme.background,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const ModernLoadingIndicator(),
+            const SizedBox(height: 32),
+            Text(
+              'Loading your library...',
+              style: theme.textTheme.titleLarge,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: 200,
+              child: LinearProgressIndicator(
+                value: _progress,
+                minHeight: 8,
+                backgroundColor: theme.colorScheme.surface,
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              '${(_progress * 100).toInt()}%',
+              style: theme.textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MainAppRouter extends StatelessWidget {
+  const _MainAppRouter();
+  @override
+  Widget build(BuildContext context) {
+    // Rebuild the router-based app after splash
     final _rootNavigatorKey = GlobalKey<NavigatorState>();
     final _shellNavigatorKey = GlobalKey<NavigatorState>();
-
-    // Configure routing
     final router = GoRouter(
       navigatorKey: _rootNavigatorKey,
       initialLocation: '/',
@@ -124,19 +215,13 @@ class MyApp extends StatelessWidget {
         ),
       ],
     );
-
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<BookBloc>.value(value: bookBloc),
-      ],
-      child: MaterialApp.router(
-        title: 'Book Reader',
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        routerConfig: router,
-        debugShowCheckedModeBanner: false,
-      ),
+    return MaterialApp.router(
+      title: 'Book Reader',
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
+      routerConfig: router,
+      debugShowCheckedModeBanner: false,
     );
   }
 }
