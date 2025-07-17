@@ -4,7 +4,7 @@ import '../bloc/book/book_bloc.dart';
 import '../bloc/book/book_event.dart';
 import '../bloc/book/book_state.dart';
 import '../widgets/book_card.dart';
-import '../widgets/loading_shimmer.dart';
+
 import '../widgets/modern_loading_indicator.dart';
 
 class SearchPage extends StatefulWidget {

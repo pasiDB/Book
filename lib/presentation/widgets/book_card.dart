@@ -84,6 +84,28 @@ class BookCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     const SizedBox(height: 8),
+                    if (book.languages.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          book.languages.first.toUpperCase(),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 10,
+                              ),
+                        ),
+                      ),
                     // Removed TXT/EPUB chips
                   ],
                 ),

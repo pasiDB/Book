@@ -17,17 +17,30 @@ class BookRepositoryImpl implements BookRepository, ReadingRepository {
   @override
   Future<List<Book>> getBooksByTopic(String topic) async {
     try {
-      final books = await remoteDataSource.getBooksByTopic(topic);
-      await localDataSource.cacheBooks('cached_books_$topic', books);
+      // Use pagination to load only 10 books initially
+      final books = await remoteDataSource.getBooksByTopicWithPagination(topic,
+          limit: 10, offset: 0);
+      await localDataSource.cacheBooksByCategory(topic, books);
       return books;
     } catch (e) {
       // Fallback to cached data if available
-      final cachedBooks =
-          await localDataSource.getCachedBooks('cached_books_$topic');
+      final cachedBooks = await localDataSource.getCachedBooksByCategory(topic);
       if (cachedBooks.isNotEmpty) {
         return cachedBooks;
       }
       rethrow;
+    }
+  }
+
+  @override
+  Future<List<Book>> getBooksByTopicWithPagination(String topic,
+      {int limit = 10, int offset = 0}) async {
+    try {
+      final books = await remoteDataSource.getBooksByTopicWithPagination(topic,
+          limit: limit, offset: offset);
+      return books;
+    } catch (e) {
+      throw Exception('Failed to get books by topic with pagination: $e');
     }
   }
 

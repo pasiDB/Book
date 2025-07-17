@@ -112,3 +112,11 @@ class PreloadBooksByTopic extends BookEvent {
   @override
   List<Object?> get props => [topic];
 }
+
+class LoadMoreBooks extends BookEvent {
+  final String category;
+  final int currentCount;
+  const LoadMoreBooks({required this.category, required this.currentCount});
+  @override
+  List<Object?> get props => [category, currentCount];
+}

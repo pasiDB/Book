@@ -16,6 +16,7 @@ import 'dart:async';
 
 class BookBloc extends Bloc<BookEvent, BookState> {
   final GetBooksByTopic getBooksByTopic;
+  final GetBooksByTopicWithPagination getBooksByTopicWithPagination;
   final SearchBooks searchBooks;
   final GetBookContent getBookContent;
   final GetBookContentByGutenbergId getBookContentByGutenbergId;
@@ -23,9 +24,12 @@ class BookBloc extends Bloc<BookEvent, BookState> {
 
   // In-memory cache for books by category
   final Map<String, List<Book>> _booksByCategoryCache = {};
+  // Cache for all books fetched from API (for pagination)
+  final Map<String, List<Book>> _allBooksByCategoryCache = {};
 
   BookBloc({
     required this.getBooksByTopic,
+    required this.getBooksByTopicWithPagination,
     required this.searchBooks,
     required this.getBookContent,
     required this.getBookContentByGutenbergId,
@@ -33,6 +37,7 @@ class BookBloc extends Bloc<BookEvent, BookState> {
   }) : super(const BookState()) {
     on<LoadBooksByTopic>(_onLoadBooksByTopic);
     on<PreloadBooksByTopic>(_onPreloadBooksByTopic);
+    on<LoadMoreBooks>(_onLoadMoreBooks);
     on<SearchBooksEvent>(_onSearchBooks);
     on<LoadBookById>(_onLoadBookById);
     on<LoadBooksByPage>(_onLoadBooksByPage);
@@ -76,25 +81,113 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     Emitter<BookState> emit,
   ) async {
     emit(state.copyWith(isLoading: true, error: null, category: event.topic));
-    // Check cache first
-    if (_booksByCategoryCache.containsKey(event.topic)) {
+
+    // Check if we have all books cached for this category
+    if (_allBooksByCategoryCache.containsKey(event.topic)) {
+      final allBooks = _allBooksByCategoryCache[event.topic]!;
+      final initialBooks = allBooks.take(10).toList();
+      _booksByCategoryCache[event.topic] = initialBooks;
+
       emit(state.copyWith(
-        books: _booksByCategoryCache[event.topic]!,
+        books: initialBooks,
         isLoading: false,
         error: null,
         category: event.topic,
       ));
       return;
     }
+
+    // Try to load from local storage first
+    final localDataSource = bookRepository is BookRepositoryImpl
+        ? (bookRepository as BookRepositoryImpl).localDataSource
+        : null;
+
+    if (localDataSource != null) {
+      try {
+        final cachedBooks =
+            await localDataSource.getCachedBooksByCategory(event.topic);
+        if (cachedBooks.isNotEmpty) {
+          _booksByCategoryCache[event.topic] = cachedBooks;
+          _allBooksByCategoryCache[event.topic] = cachedBooks;
+          emit(state.copyWith(
+            books: cachedBooks,
+            isLoading: false,
+            error: null,
+            category: event.topic,
+          ));
+          return;
+        }
+      } catch (e) {
+        print('[BLoC] Error loading from local storage: $e');
+      }
+    }
+
     try {
-      final books = await getBooksByTopic(event.topic);
-      // Cache the result
-      _booksByCategoryCache[event.topic] = books;
+      print('[BLoC] Fetching books for topic: ${event.topic}');
+      final allBooks = await getBooksByTopic(event.topic);
+      print(
+          '[BLoC] Successfully fetched ${allBooks.length} books for topic: ${event.topic}');
+
+      // Cache all books for pagination
+      _allBooksByCategoryCache[event.topic] = allBooks;
+
+      // Show only first 10 books initially
+      final initialBooks = allBooks.take(10).toList();
+      _booksByCategoryCache[event.topic] = initialBooks;
+
+      // Save to local storage (only first 10 for storage efficiency)
+      if (localDataSource != null) {
+        try {
+          final bookModels = initialBooks
+              .map((book) => BookModel.fromJson((book as BookModel).toJson()))
+              .toList();
+          await localDataSource.cacheBooksByCategory(event.topic, bookModels);
+        } catch (e) {
+          print('[BLoC] Error saving to local storage: $e');
+        }
+      }
+
       emit(state.copyWith(
-        books: books,
+        books: initialBooks,
         isLoading: false,
         error: null,
         category: event.topic,
+      ));
+    } catch (e) {
+      print('[BLoC] Error fetching books for topic ${event.topic}: $e');
+      emit(state.copyWith(isLoading: false, error: 'Failed to load books: $e'));
+    }
+  }
+
+  Future<void> _onLoadMoreBooks(
+    LoadMoreBooks event,
+    Emitter<BookState> emit,
+  ) async {
+    try {
+      // Check if we have all books cached
+      if (!_allBooksByCategoryCache.containsKey(event.category)) {
+        emit(
+            state.copyWith(isLoading: false, error: 'No more books available'));
+        return;
+      }
+
+      final allBooks = _allBooksByCategoryCache[event.category]!;
+      final currentCount = event.currentCount;
+
+      // Check if we have more books to show
+      if (currentCount >= allBooks.length) {
+        emit(
+            state.copyWith(isLoading: false, error: 'No more books available'));
+        return;
+      }
+
+      // Get next 10 books
+      final nextBooks = allBooks.skip(currentCount).take(10).toList();
+      final updatedBooks = List<Book>.from(state.books)..addAll(nextBooks);
+
+      emit(state.copyWith(
+        books: updatedBooks,
+        isLoading: false,
       ));
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: e.toString()));
@@ -286,15 +379,42 @@ class BookBloc extends Bloc<BookEvent, BookState> {
   // Optimized method to preload all categories and set state for default
   Future<void> preloadAllCategoriesAndSetDefault() async {
     final categories = AppConstants.bookCategories;
+    final localDataSource = bookRepository is BookRepositoryImpl
+        ? (bookRepository as BookRepositoryImpl).localDataSource
+        : null;
+
     final futures = <Future<void>>[];
     for (final category in categories) {
       if (!_booksByCategoryCache.containsKey(category)) {
-        futures.add(getBooksByTopic(category).then((books) {
-          _booksByCategoryCache[category] = books;
-        }).catchError((_) {}));
+        futures.add(() async {
+          // First try local storage
+          if (localDataSource != null) {
+            final cachedBooks =
+                await localDataSource.getCachedBooksByCategory(category);
+            if (cachedBooks.isNotEmpty) {
+              _booksByCategoryCache[category] = cachedBooks;
+              return;
+            }
+          }
+
+          // If not in local storage, fetch from API
+          try {
+            final books = await getBooksByTopic(category);
+            _booksByCategoryCache[category] = books;
+            // Save to local storage
+            if (localDataSource != null) {
+              final bookModels = books
+                  .map((book) =>
+                      BookModel.fromJson((book as BookModel).toJson()))
+                  .toList();
+              await localDataSource.cacheBooksByCategory(category, bookModels);
+            }
+          } catch (_) {}
+        }());
       }
     }
     await Future.wait(futures);
+
     // Set state for default category
     final defaultCategory = categories.first;
     final cachedBooks = _booksByCategoryCache[defaultCategory];
@@ -310,9 +430,39 @@ class BookBloc extends Bloc<BookEvent, BookState> {
   // Load only the default category and set state
   Future<void> loadDefaultCategoryAndSetState() async {
     final defaultCategory = AppConstants.bookCategories.first;
+
+    // First try to load from local storage
+    final localDataSource = bookRepository is BookRepositoryImpl
+        ? (bookRepository as BookRepositoryImpl).localDataSource
+        : null;
+
+    if (localDataSource != null) {
+      final cachedBooks =
+          await localDataSource.getCachedBooksByCategory(defaultCategory);
+      if (cachedBooks.isNotEmpty) {
+        _booksByCategoryCache[defaultCategory] = cachedBooks;
+        emit(state.copyWith(
+          books: cachedBooks,
+          isLoading: false,
+          category: defaultCategory,
+        ));
+        return;
+      }
+    }
+
+    // If not in local storage, fetch from API
     try {
       final books = await getBooksByTopic(defaultCategory);
       _booksByCategoryCache[defaultCategory] = books;
+
+      // Save to local storage for future use
+      if (localDataSource != null) {
+        final bookModels = books
+            .map((book) => BookModel.fromJson((book as BookModel).toJson()))
+            .toList();
+        await localDataSource.cacheBooksByCategory(defaultCategory, bookModels);
+      }
+
       emit(state.copyWith(
         books: books,
         isLoading: false,
@@ -325,11 +475,33 @@ class BookBloc extends Bloc<BookEvent, BookState> {
   Future<void> preloadOtherCategoriesInBackground() async {
     final categories = AppConstants.bookCategories;
     final defaultCategory = categories.first;
+    final localDataSource = bookRepository is BookRepositoryImpl
+        ? (bookRepository as BookRepositoryImpl).localDataSource
+        : null;
+
     for (final category in categories) {
       if (category == defaultCategory) continue;
       if (!_booksByCategoryCache.containsKey(category)) {
+        // First try local storage
+        if (localDataSource != null) {
+          final cachedBooks =
+              await localDataSource.getCachedBooksByCategory(category);
+          if (cachedBooks.isNotEmpty) {
+            _booksByCategoryCache[category] = cachedBooks;
+            continue;
+          }
+        }
+
+        // If not in local storage, fetch from API
         getBooksByTopic(category).then((books) {
           _booksByCategoryCache[category] = books;
+          // Save to local storage
+          if (localDataSource != null) {
+            final bookModels = books
+                .map((book) => BookModel.fromJson((book as BookModel).toJson()))
+                .toList();
+            localDataSource.cacheBooksByCategory(category, bookModels);
+          }
         }).catchError((_) {});
       }
     }

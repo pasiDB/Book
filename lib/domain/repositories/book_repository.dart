@@ -2,6 +2,8 @@ import '../entities/book.dart';
 
 abstract class BookRepository {
   Future<List<Book>> getBooksByTopic(String topic);
+  Future<List<Book>> getBooksByTopicWithPagination(String topic,
+      {int limit = 10, int offset = 0});
   Future<List<Book>> searchBooks(String query);
   Future<Book?> getBookById(int id);
   Future<List<Book>> getBooksByPage(int page);

@@ -4,7 +4,7 @@ import '../bloc/book/book_bloc.dart';
 import '../bloc/book/book_event.dart';
 import '../bloc/book/book_state.dart';
 import '../../core/constants/app_constants.dart';
-import '../../domain/entities/reading_progress.dart';
+
 import '../../presentation/widgets/modern_loading_indicator.dart';
 
 class BookReaderPage extends StatefulWidget {

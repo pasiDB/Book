@@ -5,6 +5,8 @@ import '../../core/constants/app_constants.dart';
 
 abstract class BookRemoteDataSource {
   Future<List<BookModel>> getBooksByTopic(String topic);
+  Future<List<BookModel>> getBooksByTopicWithPagination(String topic,
+      {int limit = 10, int offset = 0});
   Future<List<BookModel>> searchBooks(String query);
   Future<BookModel?> getBookById(int id);
   Future<List<BookModel>> getBooksByPage(int page);
@@ -25,6 +27,30 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
       return apiResponse.results;
     } catch (e) {
       throw Exception('Failed to fetch books by topic: $e');
+    }
+  }
+
+  @override
+  Future<List<BookModel>> getBooksByTopicWithPagination(String topic,
+      {int limit = 10, int offset = 0}) async {
+    try {
+      // Use the original endpoint without pagination parameters
+      final response = await dio.get('${AppConstants.topicEndpoint}$topic');
+      final apiResponse = ApiResponseModel.fromJson(response.data);
+      final allBooks = apiResponse.results;
+
+      // Implement pagination on client side
+      final startIndex = offset;
+      final endIndex = (startIndex + limit < allBooks.length)
+          ? startIndex + limit
+          : allBooks.length;
+
+      if (startIndex < allBooks.length) {
+        return allBooks.sublist(startIndex, endIndex);
+      }
+      return [];
+    } catch (e) {
+      throw Exception('Failed to fetch books by topic with pagination: $e');
     }
   }
 

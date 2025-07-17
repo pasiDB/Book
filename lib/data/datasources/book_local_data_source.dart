@@ -12,6 +12,11 @@ abstract class BookLocalDataSource {
   Future<List<BookModel>> getCurrentlyReadingBooks();
   Future<void> saveReadingProgress(ReadingProgress progress);
   Future<ReadingProgress?> getReadingProgress(int bookId);
+  // New methods for persistent book caching
+  Future<void> cacheBooksByCategory(String category, List<BookModel> books);
+  Future<List<BookModel>> getCachedBooksByCategory(String category);
+  Future<bool> hasCachedBooksForCategory(String category);
+  Future<void> clearAllBookCache();
 }
 
 class BookLocalDataSourceImpl implements BookLocalDataSource {
@@ -43,6 +48,48 @@ class BookLocalDataSourceImpl implements BookLocalDataSource {
     final keys = sharedPreferences.getKeys();
     for (final key in keys) {
       if (key.startsWith('cached_books_')) {
+        await sharedPreferences.remove(key);
+      }
+    }
+  }
+
+  @override
+  Future<void> cacheBooksByCategory(
+      String category, List<BookModel> books) async {
+    final key = 'category_books_$category';
+    final booksJson = books.map((book) => book.toJson()).toList();
+    await sharedPreferences.setString(key, jsonEncode(booksJson));
+    // Also store timestamp for cache invalidation
+    await sharedPreferences.setInt(
+        '${key}_timestamp', DateTime.now().millisecondsSinceEpoch);
+  }
+
+  @override
+  Future<List<BookModel>> getCachedBooksByCategory(String category) async {
+    final key = 'category_books_$category';
+    final booksString = sharedPreferences.getString(key);
+    if (booksString != null) {
+      final booksJson = jsonDecode(booksString) as List<dynamic>;
+      return booksJson
+          .map((bookJson) =>
+              BookModel.fromJson(bookJson as Map<String, dynamic>))
+          .toList();
+    }
+    return [];
+  }
+
+  @override
+  Future<bool> hasCachedBooksForCategory(String category) async {
+    final key = 'category_books_$category';
+    return sharedPreferences.containsKey(key);
+  }
+
+  @override
+  Future<void> clearAllBookCache() async {
+    final keys = sharedPreferences.getKeys();
+    for (final key in keys) {
+      if (key.startsWith('category_books_') ||
+          key.startsWith('cached_books_')) {
         await sharedPreferences.remove(key);
       }
     }

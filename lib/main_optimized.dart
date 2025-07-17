@@ -1,21 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-import 'core/constants/app_constants.dart';
+import 'core/di/dependency_injection.dart';
 import 'core/theme/app_theme.dart';
-import 'data/datasources/book_remote_data_source.dart';
-import 'data/datasources/book_local_data_source.dart';
-import 'data/repositories/book_repository_impl.dart';
-import 'domain/repositories/book_repository.dart';
-import 'domain/usecases/get_books_by_topic.dart';
-import 'domain/usecases/search_books.dart';
-import 'domain/usecases/get_book_content.dart';
-import 'domain/usecases/get_book_content_by_gutenberg_id.dart';
-import 'presentation/bloc/book/book_bloc.dart';
+import 'presentation/bloc/book/book_bloc_optimized.dart';
 import 'presentation/pages/home_page.dart';
 import 'presentation/pages/search_page.dart';
 import 'presentation/pages/library_page.dart';
@@ -30,58 +20,22 @@ void main() async {
   // Initialize Hive
   await Hive.initFlutter();
 
-  // Initialize SharedPreferences
-  final sharedPreferences = await SharedPreferences.getInstance();
+  // Initialize dependency injection
+  await DependencyInjection.initialize();
 
-  runApp(MyApp(sharedPreferences: sharedPreferences));
+  runApp(const MyAppOptimized());
 }
 
-class MyApp extends StatelessWidget {
-  final SharedPreferences sharedPreferences;
-
-  const MyApp({super.key, required this.sharedPreferences});
+class MyAppOptimized extends StatelessWidget {
+  const MyAppOptimized({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Initialize Dio
-    final dio = Dio(BaseOptions(
-      baseUrl: AppConstants.baseUrl,
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
-    ));
-
-    // Initialize data sources
-    final bookRemoteDataSource = BookRemoteDataSourceImpl(dio);
-    final bookLocalDataSource = BookLocalDataSourceImpl(sharedPreferences);
-
-    // Initialize repositories
-    final BookRepository bookRepository = BookRepositoryImpl(
-      remoteDataSource: bookRemoteDataSource,
-      localDataSource: bookLocalDataSource,
-    );
-
-    // Initialize use cases
-    final getBooksByTopic = GetBooksByTopic(bookRepository);
-    final getBooksByTopicWithPagination =
-        GetBooksByTopicWithPagination(bookRepository);
-    final searchBooks = SearchBooks(bookRepository);
-    final getBookContent = GetBookContent(bookRepository);
-    final getBookContentByGutenbergId =
-        GetBookContentByGutenbergId(bookRepository);
-
-    // Initialize BLoCs
-    final bookBloc = BookBloc(
-      getBooksByTopic: getBooksByTopic,
-      getBooksByTopicWithPagination: getBooksByTopicWithPagination,
-      searchBooks: searchBooks,
-      getBookContent: getBookContent,
-      getBookContentByGutenbergId: getBookContentByGutenbergId,
-      bookRepository: bookRepository,
-    );
-
     return MultiBlocProvider(
       providers: [
-        BlocProvider<BookBloc>.value(value: bookBloc),
+        BlocProvider<BookBlocOptimized>.value(
+          value: DependencyInjection.bookBloc,
+        ),
       ],
       child: MaterialApp(
         title: 'Book Reader',
@@ -89,21 +43,20 @@ class MyApp extends StatelessWidget {
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
         debugShowCheckedModeBanner: false,
-        home: SplashScreen(bookBloc: bookBloc),
+        home: SplashScreenOptimized(),
       ),
     );
   }
 }
 
-class SplashScreen extends StatefulWidget {
-  final BookBloc bookBloc;
-  const SplashScreen({super.key, required this.bookBloc});
+class SplashScreenOptimized extends StatefulWidget {
+  const SplashScreenOptimized({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  State<SplashScreenOptimized> createState() => _SplashScreenOptimizedState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenOptimizedState extends State<SplashScreenOptimized> {
   double _progress = 0.0;
   bool _loadingDone = false;
 
@@ -114,24 +67,34 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _preloadAllCategories() async {
-    await widget.bookBloc.loadDefaultCategoryAndSetState();
+    final bookBloc = DependencyInjection.bookBloc;
+
+    // Load default category
+    await bookBloc.loadDefaultCategoryAndSetState();
+
+    setState(() {
+      _progress = 0.5;
+    });
+
+    // Preload other categories in background
+    await bookBloc.preloadOtherCategoriesInBackground();
+
     setState(() {
       _progress = 1.0;
     });
+
     await Future.delayed(const Duration(milliseconds: 300));
     setState(() {
       _loadingDone = true;
     });
-    // Start preloading other categories in the background
-    widget.bookBloc.preloadOtherCategoriesInBackground();
   }
 
   @override
   Widget build(BuildContext context) {
     if (_loadingDone) {
-      // Use router-based navigation after splash
-      return const _MainAppRouter();
+      return const _MainAppRouterOptimized();
     }
+
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
@@ -168,20 +131,22 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
-class _MainAppRouter extends StatelessWidget {
-  const _MainAppRouter();
+class _MainAppRouterOptimized extends StatelessWidget {
+  const _MainAppRouterOptimized();
+
   @override
   Widget build(BuildContext context) {
-    // Rebuild the router-based app after splash
     final rootNavigatorKey = GlobalKey<NavigatorState>();
     final shellNavigatorKey = GlobalKey<NavigatorState>();
+
     final router = GoRouter(
       navigatorKey: rootNavigatorKey,
       initialLocation: '/',
       routes: [
         ShellRoute(
           navigatorKey: shellNavigatorKey,
-          builder: (context, state, child) => MainScaffold(child: child),
+          builder: (context, state, child) =>
+              MainScaffoldOptimized(child: child),
           routes: [
             GoRoute(
               path: '/',
@@ -219,6 +184,7 @@ class _MainAppRouter extends StatelessWidget {
         ),
       ],
     );
+
     return MaterialApp.router(
       title: 'Book Reader',
       theme: AppTheme.lightTheme,
@@ -230,16 +196,16 @@ class _MainAppRouter extends StatelessWidget {
   }
 }
 
-class MainScaffold extends StatefulWidget {
+class MainScaffoldOptimized extends StatefulWidget {
   final Widget child;
 
-  const MainScaffold({super.key, required this.child});
+  const MainScaffoldOptimized({super.key, required this.child});
 
   @override
-  State<MainScaffold> createState() => _MainScaffoldState();
+  State<MainScaffoldOptimized> createState() => _MainScaffoldOptimizedState();
 }
 
-class _MainScaffoldState extends State<MainScaffold> {
+class _MainScaffoldOptimizedState extends State<MainScaffoldOptimized> {
   int _currentIndex = 0;
 
   @override
