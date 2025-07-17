@@ -77,7 +77,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Error:  {state.error}',
+                      'Error: ${state.error}',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
