@@ -8,9 +8,9 @@ import '../../core/constants/app_constants.dart';
 import '../../presentation/widgets/modern_loading_indicator.dart';
 
 class BookReaderPage extends StatefulWidget {
-  final int bookId;
+  final String workKey;
 
-  const BookReaderPage({super.key, required this.bookId});
+  const BookReaderPage({super.key, required this.workKey});
 
   @override
   State<BookReaderPage> createState() => _BookReaderPageState();
@@ -29,7 +29,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
   void initState() {
     super.initState();
     // Step 1: Always load book details first
-    context.read<BookBloc>().add(LoadBookById(widget.bookId));
+    context.read<BookBloc>().add(LoadBookById(widget.workKey));
     _scrollController.addListener(_onScroll);
   }
 
@@ -62,7 +62,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
     final state = bloc.state;
     if (state.selectedBook != null) {
       bloc.add(SaveReadingProgress(
-        bookId: state.selectedBook!.id,
+        workKey: state.selectedBook!.id.toString(),
         chunkIndex: state.currentChunkIndex,
         scrollOffset:
             _scrollController.hasClients ? _scrollController.offset : 0.0,
@@ -72,7 +72,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
 
   Future<void> _loadBookContent() async {
     // First get book details to find the text URL
-    context.read<BookBloc>().add(LoadBookById(widget.bookId));
+    context.read<BookBloc>().add(LoadBookById(widget.workKey));
   }
 
   @override
@@ -124,9 +124,10 @@ class _BookReaderPageState extends State<BookReaderPage> {
           }
           // Step 3: When book details are loaded, always load content (once)
           if (state.selectedBook != null && !_contentRequested) {
+            // For Open Library, trigger content loading here (custom event or direct logic)
             context
                 .read<BookBloc>()
-                .add(LoadBookContentByGutenbergId(state.selectedBook!.id));
+                .add(LoadBookContent(state.selectedBook!.id));
             _contentRequested = true;
           }
           // Step 4: When content is loaded, restore chunk and scroll (once, if progress exists)

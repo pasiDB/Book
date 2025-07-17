@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 
 class AppConstants {
   // API Endpoints
-  static const String baseUrl = 'https://gutendex.com';
-  static const String booksEndpoint = '/books/';
-  static const String searchEndpoint = '/books/?search=';
-  static const String topicEndpoint = '/books/?topic=';
+  static const String baseUrl = 'https://openlibrary.org';
+  static const String booksEndpoint =
+      '/search.json'; // Open Library search endpoint
+  static const String searchEndpoint =
+      '/search.json?q='; // Open Library search endpoint with query
+  static const String topicEndpoint =
+      '/subjects/'; // Open Library subject endpoint, e.g., /subjects/fiction.json
 
   // Book Categories/Topics
   static const List<String> bookCategories = [

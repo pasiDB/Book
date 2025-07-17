@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class Book extends Equatable {
-  final int id;
+  final String id;
   final String title;
   final List<String> authors;
   final List<String> subjects;

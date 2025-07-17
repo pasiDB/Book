@@ -60,12 +60,12 @@ class BookRepositoryOptimized implements BookRepository, ReadingRepository {
   }
 
   @override
-  Future<Book?> getBookById(int id) async {
+  Future<Book?> getBookById(String workKey) async {
     try {
-      final book = await remoteDataSource.getBookById(id);
+      final book = await remoteDataSource.getBookByWorkKey(workKey);
       return book;
     } catch (e) {
-      throw Exception('Failed to get book by id: $e');
+      throw Exception('Failed to get book by work key: $e');
     }
   }
 
@@ -89,17 +89,6 @@ class BookRepositoryOptimized implements BookRepository, ReadingRepository {
     }
   }
 
-  @override
-  Future<String> getBookContentByGutenbergId(int gutenbergId) async {
-    try {
-      final content =
-          await remoteDataSource.getBookContentByGutenbergId(gutenbergId);
-      return content;
-    } catch (e) {
-      throw Exception('Failed to get book content by Gutenberg ID: $e');
-    }
-  }
-
   // Optimized batch operations
   Future<List<Book>> getBooksBatch(List<int> ids) async {
     try {
@@ -119,8 +108,8 @@ class BookRepositoryOptimized implements BookRepository, ReadingRepository {
 
   // ReadingRepository implementation
   @override
-  Future<ReadingProgress?> getReadingProgress(int bookId) async {
-    return await localDataSource.getReadingProgress(bookId);
+  Future<ReadingProgress?> getReadingProgress(String workKey) async {
+    return await localDataSource.getReadingProgress(workKey);
   }
 
   @override
@@ -129,11 +118,11 @@ class BookRepositoryOptimized implements BookRepository, ReadingRepository {
   }
 
   @override
-  Future<void> updateCurrentPosition(
-      int bookId, int position, double progress, double scrollOffset) async {
-    final existing = await getReadingProgress(bookId);
+  Future<void> updateCurrentPosition(String workKey, int position,
+      double progress, double scrollOffset) async {
+    final existing = await getReadingProgress(workKey);
     final updated = ReadingProgress(
-      bookId: bookId,
+      bookId: workKey,
       progress: progress,
       currentPosition: position,
       scrollOffset: scrollOffset,
@@ -144,11 +133,11 @@ class BookRepositoryOptimized implements BookRepository, ReadingRepository {
   }
 
   @override
-  Future<void> addBookmark(int bookId, int position) async {
-    final existing = await getReadingProgress(bookId);
+  Future<void> addBookmark(String workKey, int position) async {
+    final existing = await getReadingProgress(workKey);
     final updated = (existing ??
             ReadingProgress(
-              bookId: bookId,
+              bookId: workKey,
               progress: 0.0,
               currentPosition: 0,
               scrollOffset: 0.0,
@@ -160,8 +149,8 @@ class BookRepositoryOptimized implements BookRepository, ReadingRepository {
   }
 
   @override
-  Future<void> removeBookmark(int bookId, int position) async {
-    final existing = await getReadingProgress(bookId);
+  Future<void> removeBookmark(String workKey, int position) async {
+    final existing = await getReadingProgress(workKey);
     if (existing == null) return;
     final updated = existing.copyWith(
         bookmarks: existing.bookmarks.where((b) => b != position).toList());

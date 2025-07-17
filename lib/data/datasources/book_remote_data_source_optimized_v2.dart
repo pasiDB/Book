@@ -9,9 +9,9 @@ abstract class BookRemoteDataSourceOptimized {
       {int limit = 10, int offset = 0});
   Future<List<BookModel>> searchBooks(String query);
   Future<BookModel?> getBookById(int id);
+  Future<BookModel?> getBookByWorkKey(String workKey);
   Future<List<BookModel>> getBooksByPage(int page);
   Future<String> getBookContent(String textUrl);
-  Future<String> getBookContentByGutenbergId(int gutenbergId);
   Future<List<BookModel>> getBooksBatch(List<int> ids);
   Future<Map<int, String>> getBookContentsBatch(List<String> textUrls);
 }
@@ -116,6 +116,20 @@ class BookRemoteDataSourceOptimizedImpl
   }
 
   @override
+  Future<BookModel?> getBookByWorkKey(String workKey) async {
+    try {
+      final response = await _apiService.getWithRetry<Map<String, dynamic>>(
+        '/works/$workKey.json',
+        useCache: true,
+      );
+      return BookModel.fromOpenLibraryWork(response);
+    } catch (e) {
+      print('Error fetching book by work key: $e');
+      return null;
+    }
+  }
+
+  @override
   Future<String> getBookContent(String textUrl) async {
     try {
       // Extract book ID from URL for caching
@@ -158,39 +172,6 @@ class BookRemoteDataSourceOptimizedImpl
       return apiResponse.results;
     } catch (e) {
       print('Error fetching books by page: $e');
-      rethrow;
-    }
-  }
-
-  @override
-  Future<String> getBookContentByGutenbergId(int gutenbergId) async {
-    try {
-      // Check cache first
-      final cachedContent = await _cacheService.getBookContent(gutenbergId);
-      if (cachedContent != null) {
-        return cachedContent;
-      }
-
-      // First get the book details to find the text URL
-      final book = await getBookById(gutenbergId);
-      if (book == null) {
-        throw Exception('Book not found');
-      }
-
-      final textUrl = book.textDownloadUrl;
-      if (textUrl == null) {
-        throw Exception('No text format available for this book');
-      }
-
-      // Fetch the content
-      final content = await getBookContent(textUrl);
-
-      // Cache the content
-      await _cacheService.setBookContent(gutenbergId, content);
-
-      return content;
-    } catch (e) {
-      print('Error fetching book content by Gutenberg ID: $e');
       rethrow;
     }
   }

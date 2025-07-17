@@ -170,16 +170,16 @@ class _MainAppRouterOptimized extends StatelessWidget {
           path: '/book/:id',
           parentNavigatorKey: rootNavigatorKey,
           builder: (context, state) {
-            final bookId = int.parse(state.pathParameters['id']!);
-            return BookDetailPage(bookId: bookId);
+            final workKey = state.pathParameters['id']!;
+            return BookDetailPage(workKey: workKey);
           },
         ),
         GoRoute(
           path: '/reader/:id',
           parentNavigatorKey: rootNavigatorKey,
           builder: (context, state) {
-            final bookId = int.parse(state.pathParameters['id']!);
-            return BookReaderPage(bookId: bookId);
+            final workKey = state.pathParameters['id']!;
+            return BookReaderPage(workKey: workKey);
           },
         ),
       ],

@@ -11,7 +11,7 @@ abstract class BookLocalDataSource {
   Future<void> saveCurrentlyReadingBooks(List<BookModel> books);
   Future<List<BookModel>> getCurrentlyReadingBooks();
   Future<void> saveReadingProgress(ReadingProgress progress);
-  Future<ReadingProgress?> getReadingProgress(int bookId);
+  Future<ReadingProgress?> getReadingProgress(String workKey);
   // New methods for persistent book caching
   Future<void> cacheBooksByCategory(String category, List<BookModel> books);
   Future<List<BookModel>> getCachedBooksByCategory(String category);
@@ -129,13 +129,13 @@ class BookLocalDataSourceImpl implements BookLocalDataSource {
   }
 
   @override
-  Future<ReadingProgress?> getReadingProgress(int bookId) async {
-    final key = 'reading_progress_$bookId';
+  Future<ReadingProgress?> getReadingProgress(String workKey) async {
+    final key = 'reading_progress_$workKey';
     final jsonString = sharedPreferences.getString(key);
     if (jsonString == null) return null;
     final data = jsonDecode(jsonString);
     return ReadingProgress(
-      bookId: data['bookId'] as int,
+      bookId: data['bookId'] as String,
       progress: (data['progress'] as num).toDouble(),
       currentPosition: data['currentPosition'] as int,
       scrollOffset: (data['scrollOffset'] as num).toDouble(),

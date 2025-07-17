@@ -4,7 +4,6 @@ import 'dart:isolate';
 import '../../../domain/usecases/get_books_by_topic.dart';
 import '../../../domain/usecases/search_books.dart';
 import '../../../domain/usecases/get_book_content.dart';
-import '../../../domain/usecases/get_book_content_by_gutenberg_id.dart';
 import '../../../domain/repositories/book_repository.dart';
 import '../../../domain/entities/book.dart';
 
@@ -17,7 +16,6 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
   final GetBooksByTopicWithPagination _getBooksByTopicWithPagination;
   final SearchBooks _searchBooks;
   final GetBookContent _getBookContent;
-  final GetBookContentByGutenbergId _getBookContentByGutenbergId;
   final BookRepository _bookRepository;
 
   // Enhanced in-memory cache with TTL
@@ -37,13 +35,11 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
     required GetBooksByTopicWithPagination getBooksByTopicWithPagination,
     required SearchBooks searchBooks,
     required GetBookContent getBookContent,
-    required GetBookContentByGutenbergId getBookContentByGutenbergId,
     required BookRepository bookRepository,
   })  : _getBooksByTopic = getBooksByTopic,
         _getBooksByTopicWithPagination = getBooksByTopicWithPagination,
         _searchBooks = searchBooks,
         _getBookContent = getBookContent,
-        _getBookContentByGutenbergId = getBookContentByGutenbergId,
         _bookRepository = bookRepository,
         super(const BookState()) {
     on<LoadBooksByTopic>(_onLoadBooksByTopic);
@@ -52,7 +48,6 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
     on<SearchBooksEvent>(_onSearchBooks);
     on<LoadBookById>(_onLoadBookById);
     on<LoadBookContent>(_onLoadBookContent);
-    on<LoadBookContentByGutenbergId>(_onLoadBookContentByGutenbergId);
     on<LoadBookContentChunk>(_onLoadBookContentChunk);
     on<AddBookToLibrary>(_onAddBookToLibrary);
     on<LoadCurrentlyReadingBooks>(_onLoadCurrentlyReadingBooks);
@@ -186,7 +181,7 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
     Emitter<BookState> emit,
   ) async {
     try {
-      final book = await _bookRepository.getBookById(event.bookId);
+      final book = await _bookRepository.getBookById(event.workKey);
       if (book != null) {
         emit(state.copyWith(
           selectedBook: book,
@@ -230,33 +225,7 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
     }
   }
 
-  Future<void> _onLoadBookContentByGutenbergId(
-    LoadBookContentByGutenbergId event,
-    Emitter<BookState> emit,
-  ) async {
-    emit(state.copyWith(isLoading: true, error: null));
-
-    try {
-      final content = await _getBookContentByGutenbergId(event.gutenbergId);
-      final chunks = _splitContentIntoChunks(content);
-
-      emit(state.copyWith(
-        bookContent: content,
-        bookContentChunks: chunks,
-        currentChunkIndex: 0,
-        hasMoreContent: chunks.length > 1,
-        isLoading: false,
-        error: null,
-      ));
-    } catch (e) {
-      emit(state.copyWith(
-        error: 'Failed to load book content: $e',
-        isLoading: false,
-      ));
-    }
-  }
-
-    Future<void> _onLoadBookContentChunk(
+  Future<void> _onLoadBookContentChunk(
     LoadBookContentChunk event,
     Emitter<BookState> emit,
   ) async {

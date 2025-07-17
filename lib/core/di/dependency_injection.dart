@@ -10,7 +10,6 @@ import '../../domain/repositories/reading_repository.dart';
 import '../../domain/usecases/get_books_by_topic.dart';
 import '../../domain/usecases/search_books.dart';
 import '../../domain/usecases/get_book_content.dart';
-import '../../domain/usecases/get_book_content_by_gutenberg_id.dart';
 import '../../presentation/bloc/book/book_bloc_optimized.dart';
 import '../constants/app_constants.dart';
 
@@ -82,7 +81,6 @@ class DependencyInjection {
           GetBooksByTopicWithPagination(_bookRepository),
       searchBooks: SearchBooks(_bookRepository),
       getBookContent: GetBookContent(_bookRepository),
-      getBookContentByGutenbergId: GetBookContentByGutenbergId(_bookRepository),
       bookRepository: _bookRepository,
     );
   }
@@ -102,6 +100,4 @@ class DependencyInjection {
       GetBooksByTopicWithPagination(_bookRepository);
   static SearchBooks searchBooks() => SearchBooks(_bookRepository);
   static GetBookContent getBookContent() => GetBookContent(_bookRepository);
-  static GetBookContentByGutenbergId getBookContentByGutenbergId() =>
-      GetBookContentByGutenbergId(_bookRepository);
 }

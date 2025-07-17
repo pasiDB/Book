@@ -8,9 +8,9 @@ import '../../domain/entities/book.dart';
 import '../widgets/modern_loading_indicator.dart';
 
 class BookDetailPage extends StatefulWidget {
-  final int bookId;
+  final String workKey;
 
-  const BookDetailPage({super.key, required this.bookId});
+  const BookDetailPage({super.key, required this.workKey});
 
   @override
   State<BookDetailPage> createState() => _BookDetailPageState();
@@ -22,7 +22,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
   @override
   void initState() {
     super.initState();
-    context.read<BookBloc>().add(LoadBookById(widget.bookId));
+    context.read<BookBloc>().add(LoadBookById(widget.workKey));
   }
 
   @override
@@ -77,7 +77,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Error:  {state.error}',
+                      'Error: ${state.error}',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
@@ -86,7 +86,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                       onPressed: () {
                         context
                             .read<BookBloc>()
-                            .add(LoadBookById(widget.bookId));
+                            .add(LoadBookById(widget.workKey));
                       },
                       child: const Text('Retry'),
                     ),

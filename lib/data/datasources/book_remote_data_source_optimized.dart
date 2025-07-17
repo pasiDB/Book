@@ -11,7 +11,6 @@ abstract class BookRemoteDataSource {
   Future<BookModel?> getBookById(int id);
   Future<List<BookModel>> getBooksByPage(int page);
   Future<String> getBookContent(String textUrl);
-  Future<String> getBookContentByGutenbergId(int gutenbergId);
 }
 
 class BookRemoteDataSourceImpl implements BookRemoteDataSource {
@@ -155,39 +154,6 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
       return apiResponse.results;
     } catch (e) {
       print('Error fetching books by page: $e');
-      rethrow;
-    }
-  }
-
-  @override
-  Future<String> getBookContentByGutenbergId(int gutenbergId) async {
-    try {
-      // Check cache first
-      final cachedContent = await _cacheService.getBookContent(gutenbergId);
-      if (cachedContent != null) {
-        return cachedContent;
-      }
-
-      // First get the book details to find the text URL
-      final book = await getBookById(gutenbergId);
-      if (book == null) {
-        throw Exception('Book not found');
-      }
-
-      final textUrl = book.textDownloadUrl;
-      if (textUrl == null) {
-        throw Exception('No text format available for this book');
-      }
-
-      // Fetch the content
-      final content = await getBookContent(textUrl);
-
-      // Cache the content
-      await _cacheService.setBookContent(gutenbergId, content);
-
-      return content;
-    } catch (e) {
-      print('Error fetching book content by Gutenberg ID: $e');
       rethrow;
     }
   }

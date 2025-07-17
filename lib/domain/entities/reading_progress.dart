@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class ReadingProgress extends Equatable {
-  final int bookId;
+  final String bookId;
   final double progress; // 0.0 to 1.0
   final int currentPosition; // Character position in text
   final double scrollOffset; // Scroll position in the reader
@@ -28,7 +28,7 @@ class ReadingProgress extends Equatable {
       ];
 
   ReadingProgress copyWith({
-    int? bookId,
+    String? bookId,
     double? progress,
     int? currentPosition,
     double? scrollOffset,

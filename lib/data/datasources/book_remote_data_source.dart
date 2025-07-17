@@ -9,9 +9,9 @@ abstract class BookRemoteDataSource {
       {int limit = 10, int offset = 0});
   Future<List<BookModel>> searchBooks(String query);
   Future<BookModel?> getBookById(int id);
+  Future<BookModel?> getBookByWorkKey(String workKey);
   Future<List<BookModel>> getBooksByPage(int page);
   Future<String> getBookContent(String textUrl);
-  Future<String> getBookContentByGutenbergId(int gutenbergId);
 }
 
 class BookRemoteDataSourceImpl implements BookRemoteDataSource {
@@ -22,9 +22,15 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
   @override
   Future<List<BookModel>> getBooksByTopic(String topic) async {
     try {
-      final response = await dio.get('${AppConstants.topicEndpoint}$topic');
-      final apiResponse = ApiResponseModel.fromJson(response.data);
-      return apiResponse.results;
+      // Open Library subject endpoint: /subjects/{topic}.json
+      final response =
+          await dio.get('${AppConstants.topicEndpoint}$topic.json');
+      final data = response.data;
+      // Open Library returns 'works' array for subjects
+      final results = (data['works'] as List<dynamic>?) ?? [];
+      return results
+          .map((json) => BookModel.fromOpenLibrarySubject(json))
+          .toList();
     } catch (e) {
       throw Exception('Failed to fetch books by topic: $e');
     }
@@ -34,21 +40,13 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
   Future<List<BookModel>> getBooksByTopicWithPagination(String topic,
       {int limit = 10, int offset = 0}) async {
     try {
-      // Use the original endpoint without pagination parameters
-      final response = await dio.get('${AppConstants.topicEndpoint}$topic');
-      final apiResponse = ApiResponseModel.fromJson(response.data);
-      final allBooks = apiResponse.results;
-
-      // Implement pagination on client side
-      final startIndex = offset;
-      final endIndex = (startIndex + limit < allBooks.length)
-          ? startIndex + limit
-          : allBooks.length;
-
-      if (startIndex < allBooks.length) {
-        return allBooks.sublist(startIndex, endIndex);
-      }
-      return [];
+      final response = await dio.get(
+          '${AppConstants.topicEndpoint}$topic.json?limit=$limit&offset=$offset');
+      final data = response.data;
+      final results = (data['works'] as List<dynamic>?) ?? [];
+      return results
+          .map((json) => BookModel.fromOpenLibrarySubject(json))
+          .toList();
     } catch (e) {
       throw Exception('Failed to fetch books by topic with pagination: $e');
     }
@@ -57,9 +55,13 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
   @override
   Future<List<BookModel>> searchBooks(String query) async {
     try {
+      // Open Library search endpoint: /search.json?q={query}
       final response = await dio.get('${AppConstants.searchEndpoint}$query');
-      final apiResponse = ApiResponseModel.fromJson(response.data);
-      return apiResponse.results;
+      final data = response.data;
+      final results = (data['docs'] as List<dynamic>?) ?? [];
+      return results
+          .map((json) => BookModel.fromOpenLibrarySearch(json))
+          .toList();
     } catch (e) {
       throw Exception('Failed to search books: $e');
     }
@@ -68,20 +70,39 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
   @override
   Future<BookModel?> getBookById(int id) async {
     try {
-      final response = await dio.get('${AppConstants.booksEndpoint}$id');
-      return BookModel.fromJson(response.data);
+      // In Open Library, id should be a work key string, e.g., 'OL12345W'
+      // For compatibility, if id is int, we can't fetch directly. Instead, this should be refactored to accept a string key.
+      // For now, return null and log a warning.
+      print(
+          'getBookById: Open Library requires a string work key, got int: $id');
+      return null;
     } catch (e) {
       throw Exception('Failed to fetch book by id: $e');
+    }
+  }
+
+  // Add a new method for Open Library work key
+  Future<BookModel?> getBookByWorkKey(String workKey) async {
+    try {
+      // workKey should be like 'OL12345W'
+      final response = await dio.get('/works/$workKey.json');
+      final data = response.data;
+      return BookModel.fromOpenLibraryWork(data);
+    } catch (e) {
+      throw Exception('Failed to fetch book by work key: $e');
     }
   }
 
   @override
   Future<List<BookModel>> getBooksByPage(int page) async {
     try {
-      final response =
-          await dio.get('${AppConstants.booksEndpoint}?page=$page');
-      final apiResponse = ApiResponseModel.fromJson(response.data);
-      return apiResponse.results;
+      // Open Library search endpoint with pagination
+      final response = await dio.get('/search.json?page=$page');
+      final data = response.data;
+      final results = (data['docs'] as List<dynamic>?) ?? [];
+      return results
+          .map((json) => BookModel.fromOpenLibrarySearch(json))
+          .toList();
     } catch (e) {
       throw Exception('Failed to fetch books by page: $e');
     }
@@ -138,55 +159,6 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
     }
   }
 
-  @override
-  Future<String> getBookContentByGutenbergId(int gutenbergId) async {
-    print(
-        '[RemoteDataSource] Fetching book content by Gutenberg ID: $gutenbergId');
-    // Construct the Project Gutenberg URL for the specific book
-    final gutenbergUrl =
-        'https://www.gutenberg.org/cache/epub/$gutenbergId/pg$gutenbergId.txt';
-    final List<String> proxyUrls = [
-      gutenbergUrl, // Direct fetch
-      'https://api.allorigins.win/raw?url=${Uri.encodeComponent(gutenbergUrl)}',
-      'https://cors-anywhere.herokuapp.com/${Uri.encodeComponent(gutenbergUrl)}',
-      'https://thingproxy.freeboard.io/fetch/${Uri.encodeComponent(gutenbergUrl)}',
-      'https://corsproxy.io/?${Uri.encodeComponent(gutenbergUrl)}',
-    ];
-    for (String url in proxyUrls) {
-      try {
-        final response = await dio.get(
-          url,
-          options: Options(
-            headers: {
-              'User-Agent':
-                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-              'Accept':
-                  'text/plain,text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-              'Accept-Language': 'en-US,en;q=0.5',
-              'Accept-Encoding': 'gzip, deflate',
-              'Connection': 'keep-alive',
-            },
-            validateStatus: (status) => status != null && status < 500,
-          ),
-        );
-        if (response.statusCode == 200 && response.data != null) {
-          String content = response.data.toString();
-          print(
-              '[RemoteDataSource] Book content fetched from $url, length: ${content.length}');
-          content = _cleanGutenbergContent(content);
-          if (content.length > 1000) {
-            return content;
-          }
-        }
-      } catch (e) {
-        print('[RemoteDataSource] Error fetching book content from $url: $e');
-        continue;
-      }
-    }
-    print('[RemoteDataSource] All proxies failed, returning fallback content.');
-    return _generateFallbackContent(gutenbergUrl);
-  }
-
   String _extractTextFromHtml(String html) {
     // Remove script and style tags first
     String text = html
@@ -219,38 +191,6 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
     }
 
     return text;
-  }
-
-  String _cleanGutenbergContent(String content) {
-    // Remove Project Gutenberg header and footer
-    String cleanedContent = content;
-
-    // Remove the Project Gutenberg header (everything before "*** START OF")
-    final startIndex = cleanedContent.indexOf('*** START OF');
-    if (startIndex != -1) {
-      cleanedContent = cleanedContent.substring(startIndex);
-    }
-
-    // Remove the Project Gutenberg footer (everything after "*** END OF")
-    final endIndex = cleanedContent.indexOf('*** END OF');
-    if (endIndex != -1) {
-      cleanedContent = cleanedContent.substring(0, endIndex);
-    }
-
-    // Clean up extra whitespace and normalize line breaks
-    cleanedContent = cleanedContent
-        .replaceAll(RegExp(r'\r\n'), '\n') // Normalize line endings
-        .replaceAll(RegExp(r'\r'), '\n') // Handle old Mac line endings
-        .replaceAll(
-            RegExp(r'\n\s*\n\s*\n'), '\n\n') // Remove excessive line breaks
-        .trim();
-
-    // If the content is too short after cleaning, return original
-    if (cleanedContent.length < 100) {
-      return content;
-    }
-
-    return cleanedContent;
   }
 
   String _generateFallbackContent(String contentUrl) {

@@ -2,7 +2,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../domain/usecases/get_books_by_topic.dart';
 import '../../../domain/usecases/search_books.dart';
 import '../../../domain/usecases/get_book_content.dart';
-import '../../../domain/usecases/get_book_content_by_gutenberg_id.dart';
 import '../../../domain/repositories/book_repository.dart';
 import '../../../data/repositories/book_repository_impl.dart';
 import '../../../data/models/book_model.dart';
@@ -19,7 +18,6 @@ class BookBloc extends Bloc<BookEvent, BookState> {
   final GetBooksByTopicWithPagination getBooksByTopicWithPagination;
   final SearchBooks searchBooks;
   final GetBookContent getBookContent;
-  final GetBookContentByGutenbergId getBookContentByGutenbergId;
   final BookRepository bookRepository;
 
   // In-memory cache for books by category
@@ -32,7 +30,6 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     required this.getBooksByTopicWithPagination,
     required this.searchBooks,
     required this.getBookContent,
-    required this.getBookContentByGutenbergId,
     required this.bookRepository,
   }) : super(const BookState()) {
     on<LoadBooksByTopic>(_onLoadBooksByTopic);
@@ -42,7 +39,6 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     on<LoadBookById>(_onLoadBookById);
     on<LoadBooksByPage>(_onLoadBooksByPage);
     on<LoadBookContent>(_onLoadBookContent);
-    on<LoadBookContentByGutenbergId>(_onLoadBookContentByGutenbergId);
     on<LoadBookContentChunk>(_onLoadBookContentChunk);
     on<AddBookToLibrary>(_onAddBookToLibrary);
     on<LoadCurrentlyReadingBooks>(_onLoadCurrentlyReadingBooks);
@@ -217,7 +213,7 @@ class BookBloc extends Bloc<BookEvent, BookState> {
   ) async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
-      final book = await bookRepository.getBookById(event.bookId);
+      final book = await bookRepository.getBookById(event.workKey);
       if (book != null) {
         emit(state.copyWith(selectedBook: book, isLoading: false, error: null));
       } else {
@@ -261,31 +257,6 @@ class BookBloc extends Bloc<BookEvent, BookState> {
       ));
     } catch (e) {
       print('[BLoC] Error loading book content: $e');
-      emit(state.copyWith(isLoading: false, error: e.toString()));
-    }
-  }
-
-  Future<void> _onLoadBookContentByGutenbergId(
-    LoadBookContentByGutenbergId event,
-    Emitter<BookState> emit,
-  ) async {
-    print('[BLoC] Loading book content by Gutenberg ID: ${event.gutenbergId}');
-    emit(state.copyWith(isLoading: true, error: null));
-    try {
-      final content = await getBookContentByGutenbergId(event.gutenbergId);
-      print(
-          '[BLoC] Book content loaded by Gutenberg ID, length: ${content.length}');
-      final chunks = _splitContentIntoChunks(content);
-      emit(state.copyWith(
-        bookContent: chunks.isNotEmpty ? chunks[0] : '',
-        bookContentChunks: chunks,
-        currentChunkIndex: 0,
-        hasMoreContent: chunks.length > 1,
-        isLoading: false,
-        error: null,
-      ));
-    } catch (e) {
-      print('[BLoC] Error loading book content by Gutenberg ID: $e');
       emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
@@ -345,29 +316,30 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     LoadReadingProgress event,
     Emitter<BookState> emit,
   ) async {
-    // Use repository to load progress
-    ReadingProgress? progress;
-    if (bookRepository is ReadingRepository) {
-      progress = await (bookRepository as ReadingRepository)
-          .getReadingProgress(event.bookId);
+    try {
+      final progress = await bookRepository.getReadingProgress(event.workKey);
+      emit(state.copyWith(readingProgress: progress));
+    } catch (e) {
+      emit(state.copyWith(error: e.toString()));
     }
-    emit(state.copyWith(readingProgress: progress));
   }
 
   Future<void> _onSaveReadingProgress(
     SaveReadingProgress event,
     Emitter<BookState> emit,
   ) async {
-    if (bookRepository is ReadingRepository) {
-      await (bookRepository as ReadingRepository).updateCurrentPosition(
-        event.bookId,
-        event.chunkIndex,
-        0.0,
-        event.scrollOffset,
+    try {
+      final progress = ReadingProgress(
+        bookId: event.workKey,
+        currentPosition: event.chunkIndex,
+        scrollOffset: event.scrollOffset,
+        progress: 0.0,
+        lastReadAt: DateTime.now(),
+        bookmarks: [],
       );
-      final progress = await (bookRepository as ReadingRepository)
-          .getReadingProgress(event.bookId);
-      emit(state.copyWith(readingProgress: progress));
+      await bookRepository.saveReadingProgress(progress);
+    } catch (e) {
+      emit(state.copyWith(error: e.toString()));
     }
   }
 

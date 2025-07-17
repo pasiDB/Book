@@ -27,12 +27,12 @@ class SearchBooksEvent extends BookEvent {
 }
 
 class LoadBookById extends BookEvent {
-  final int bookId;
+  final String workKey;
 
-  const LoadBookById(this.bookId);
+  const LoadBookById(this.workKey);
 
   @override
-  List<Object?> get props => [bookId];
+  List<Object?> get props => [workKey];
 }
 
 class LoadBooksByPage extends BookEvent {
@@ -51,15 +51,6 @@ class LoadBookContent extends BookEvent {
 
   @override
   List<Object?> get props => [textUrl];
-}
-
-class LoadBookContentByGutenbergId extends BookEvent {
-  final int gutenbergId;
-
-  const LoadBookContentByGutenbergId(this.gutenbergId);
-
-  @override
-  List<Object?> get props => [gutenbergId];
 }
 
 class LoadBookContentChunk extends BookEvent {
@@ -88,22 +79,23 @@ class LoadCurrentlyReadingBooks extends BookEvent {
 }
 
 class LoadReadingProgress extends BookEvent {
-  final int bookId;
-  const LoadReadingProgress(this.bookId);
+  final String workKey;
+  const LoadReadingProgress(this.workKey);
   @override
-  List<Object?> get props => [bookId];
+  List<Object?> get props => [workKey];
 }
 
 class SaveReadingProgress extends BookEvent {
-  final int bookId;
+  final String workKey;
   final int chunkIndex;
   final double scrollOffset;
-  const SaveReadingProgress(
-      {required this.bookId,
-      required this.chunkIndex,
-      required this.scrollOffset});
+  const SaveReadingProgress({
+    required this.workKey,
+    required this.chunkIndex,
+    required this.scrollOffset,
+  });
   @override
-  List<Object?> get props => [bookId, chunkIndex, scrollOffset];
+  List<Object?> get props => [workKey, chunkIndex, scrollOffset];
 }
 
 class PreloadBooksByTopic extends BookEvent {

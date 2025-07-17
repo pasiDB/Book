@@ -14,7 +14,6 @@ import 'domain/repositories/book_repository.dart';
 import 'domain/usecases/get_books_by_topic.dart';
 import 'domain/usecases/search_books.dart';
 import 'domain/usecases/get_book_content.dart';
-import 'domain/usecases/get_book_content_by_gutenberg_id.dart';
 import 'presentation/bloc/book/book_bloc.dart';
 import 'presentation/pages/home_page.dart';
 import 'presentation/pages/search_page.dart';
@@ -66,8 +65,6 @@ class MyApp extends StatelessWidget {
         GetBooksByTopicWithPagination(bookRepository);
     final searchBooks = SearchBooks(bookRepository);
     final getBookContent = GetBookContent(bookRepository);
-    final getBookContentByGutenbergId =
-        GetBookContentByGutenbergId(bookRepository);
 
     // Initialize BLoCs
     final bookBloc = BookBloc(
@@ -75,7 +72,6 @@ class MyApp extends StatelessWidget {
       getBooksByTopicWithPagination: getBooksByTopicWithPagination,
       searchBooks: searchBooks,
       getBookContent: getBookContent,
-      getBookContentByGutenbergId: getBookContentByGutenbergId,
       bookRepository: bookRepository,
     );
 
@@ -205,16 +201,16 @@ class _MainAppRouter extends StatelessWidget {
           path: '/book/:id',
           parentNavigatorKey: rootNavigatorKey,
           builder: (context, state) {
-            final bookId = int.parse(state.pathParameters['id']!);
-            return BookDetailPage(bookId: bookId);
+            final workKey = state.pathParameters['id']!;
+            return BookDetailPage(workKey: workKey);
           },
         ),
         GoRoute(
           path: '/reader/:id',
           parentNavigatorKey: rootNavigatorKey,
           builder: (context, state) {
-            final bookId = int.parse(state.pathParameters['id']!);
-            return BookReaderPage(bookId: bookId);
+            final workKey = state.pathParameters['id']!;
+            return BookReaderPage(workKey: workKey);
           },
         ),
       ],
