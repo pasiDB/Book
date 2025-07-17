@@ -89,6 +89,16 @@ class BookRepositoryImpl implements BookRepository, ReadingRepository {
     }
   }
 
+  @override
+  Future<List<Book>> getEditionsByWorkKey(String workKey) async {
+    try {
+      final editions = await remoteDataSource.getEditionsByWorkKey(workKey);
+      return editions;
+    } catch (e) {
+      throw Exception('Failed to get editions by work key: $e');
+    }
+  }
+
   // ReadingRepository implementation
   @override
   Future<ReadingProgress?> getReadingProgress(String workKey) async {

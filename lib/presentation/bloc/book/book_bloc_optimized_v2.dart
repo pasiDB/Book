@@ -225,7 +225,7 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
     }
   }
 
-  Future<void> _onLoadBookContentChunk(
+    Future<void> _onLoadBookContentChunk(
     LoadBookContentChunk event,
     Emitter<BookState> emit,
   ) async {

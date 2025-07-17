@@ -14,6 +14,7 @@ abstract class BookRemoteDataSourceOptimized {
   Future<String> getBookContent(String textUrl);
   Future<List<BookModel>> getBooksBatch(List<int> ids);
   Future<Map<int, String>> getBookContentsBatch(List<String> textUrls);
+  Future<List<BookModel>> getEditionsByWorkKey(String workKey);
 }
 
 class BookRemoteDataSourceOptimizedImpl
@@ -257,6 +258,21 @@ class BookRemoteDataSourceOptimizedImpl
       return results;
     } catch (e) {
       print('Error fetching book contents batch: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<BookModel>> getEditionsByWorkKey(String workKey) async {
+    try {
+      final response = await _apiService.getWithRetry<Map<String, dynamic>>(
+        '/works/$workKey/editions.json?limit=50',
+        useCache: true,
+      );
+      final results = (response['entries'] as List<dynamic>?) ?? [];
+      return results.map((json) => BookModel.fromJson(json)).toList();
+    } catch (e) {
+      print('Error fetching editions for work: $e');
       rethrow;
     }
   }

@@ -50,17 +50,19 @@ class Book extends Equatable {
   String? get epubDownloadUrl => formats['application/epub+zip'];
   String? get htmlDownloadUrl => formats['text/html'];
   String? get mobiDownloadUrl => formats['application/x-mobipocket-ebook'];
+  String? get pdfDownloadUrl => formats['application/pdf'];
 
   bool get hasTextFormat => textDownloadUrl != null;
   bool get hasEpubFormat => epubDownloadUrl != null;
   bool get hasHtmlFormat => htmlDownloadUrl != null;
   bool get hasMobiFormat => mobiDownloadUrl != null;
+  bool get hasPdfFormat => pdfDownloadUrl != null;
 
   // Check if book has any readable format
-  bool get hasReadableFormat => hasTextFormat || hasHtmlFormat;
+  bool get hasReadableFormat => hasTextFormat || hasHtmlFormat || hasPdfFormat;
 
   // Get the best available format for reading
   String? get bestReadableFormatUrl {
-    return textDownloadUrl ?? htmlDownloadUrl;
+    return textDownloadUrl ?? htmlDownloadUrl ?? pdfDownloadUrl;
   }
 }

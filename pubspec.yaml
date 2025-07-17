@@ -16,6 +16,7 @@ dependencies:
   
   # HTTP Client
   dio: ^5.3.2
+  http: ^0.13.6
   
   # Local Storage
   hive: ^2.2.3
@@ -33,10 +34,11 @@ dependencies:
   cupertino_icons: ^1.0.2
   shimmer: ^3.0.0
   cached_network_image: ^3.3.0
+  pdfx: ^2.6.0
   
   # Utilities
-  http: ^1.1.0
   intl: ^0.18.1
+  flutter_pdfview: ^1.4.1+1
 
 dev_dependencies:
   flutter_test:

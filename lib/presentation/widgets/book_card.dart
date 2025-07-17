@@ -12,7 +12,10 @@ class BookCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: InkWell(
-        onTap: () => context.push('/book/${book.id}'),
+        onTap: () {
+          final workKey = book.id.replaceAll('/works/', '');
+          context.push('/book/$workKey');
+        },
         borderRadius: BorderRadius.circular(AppConstants.cardRadius),
         child: Padding(
           padding: const EdgeInsets.all(16),

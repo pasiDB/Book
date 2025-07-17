@@ -14,6 +14,8 @@ class BookState extends Equatable {
   final bool hasMoreContent;
   final List<Book> currentlyReadingBooks;
   final ReadingProgress? readingProgress;
+  final List<Book> editions;
+  final Book? bestReadableEdition;
 
   const BookState({
     this.books = const [],
@@ -27,6 +29,8 @@ class BookState extends Equatable {
     this.hasMoreContent = false,
     this.currentlyReadingBooks = const [],
     this.readingProgress,
+    this.editions = const [],
+    this.bestReadableEdition,
   });
 
   BookState copyWith({
@@ -41,6 +45,8 @@ class BookState extends Equatable {
     bool? hasMoreContent,
     List<Book>? currentlyReadingBooks,
     ReadingProgress? readingProgress,
+    List<Book>? editions,
+    Book? bestReadableEdition,
   }) {
     return BookState(
       books: books ?? this.books,
@@ -55,6 +61,8 @@ class BookState extends Equatable {
       currentlyReadingBooks:
           currentlyReadingBooks ?? this.currentlyReadingBooks,
       readingProgress: readingProgress ?? this.readingProgress,
+      editions: editions ?? this.editions,
+      bestReadableEdition: bestReadableEdition ?? this.bestReadableEdition,
     );
   }
 
@@ -71,5 +79,7 @@ class BookState extends Equatable {
         hasMoreContent,
         currentlyReadingBooks,
         readingProgress,
+        editions,
+        bestReadableEdition,
       ];
 }

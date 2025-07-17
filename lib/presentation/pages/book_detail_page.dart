@@ -64,7 +64,17 @@ class _BookDetailPageState extends State<BookDetailPage> {
             } else if (state.selectedBook != null) {
               final alreadyInLibrary = state.currentlyReadingBooks
                   .any((b) => b.id == state.selectedBook!.id);
-              return _buildBookDetails(state.selectedBook!, alreadyInLibrary);
+              // Use bestReadableEdition if available, else selectedBook
+              final bookForReading =
+                  state.bestReadableEdition ?? state.selectedBook!;
+              final canRead = state.bestReadableEdition?.hasReadableFormat ??
+                  state.selectedBook!.hasReadableFormat;
+              return _buildBookDetails(
+                state.selectedBook!,
+                alreadyInLibrary,
+                bookForReading,
+                canRead,
+              );
             } else if (state.error != null) {
               return Center(
                 child: Column(
@@ -101,7 +111,8 @@ class _BookDetailPageState extends State<BookDetailPage> {
     );
   }
 
-  Widget _buildBookDetails(Book book, bool alreadyInLibrary) {
+  Widget _buildBookDetails(
+      Book book, bool alreadyInLibrary, Book bookForReading, bool canRead) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final chipBg = isDark ? Colors.grey[800] : Colors.grey[200];
@@ -182,8 +193,12 @@ class _BookDetailPageState extends State<BookDetailPage> {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: book.hasReadableFormat
-                      ? () => context.push('/reader/${book.id}')
+                  onPressed: canRead
+                      ? () {
+                          final workKey =
+                              bookForReading.id.replaceAll('/works/', '');
+                          context.push('/reader/$workKey');
+                        }
                       : null,
                   icon: const Icon(Icons.menu_book),
                   label: const Text('Read Now'),

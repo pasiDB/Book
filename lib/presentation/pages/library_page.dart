@@ -94,7 +94,10 @@ class CurrentlyReadingTab extends StatelessWidget {
                 title: Text(book.title,
                     maxLines: 2, overflow: TextOverflow.ellipsis),
                 subtitle: Text(book.authorNames),
-                onTap: () => context.push('/reader/${book.id}'),
+                onTap: () {
+                  final workKey = book.id.replaceAll('/works/', '');
+                  context.push('/reader/$workKey');
+                },
               ),
             );
           },

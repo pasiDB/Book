@@ -37,6 +37,7 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     on<LoadMoreBooks>(_onLoadMoreBooks);
     on<SearchBooksEvent>(_onSearchBooks);
     on<LoadBookById>(_onLoadBookById);
+    on<LoadEditionsForWork>(_onLoadEditionsForWork);
     on<LoadBooksByPage>(_onLoadBooksByPage);
     on<LoadBookContent>(_onLoadBookContent);
     on<LoadBookContentChunk>(_onLoadBookContentChunk);
@@ -216,9 +217,38 @@ class BookBloc extends Bloc<BookEvent, BookState> {
       final book = await bookRepository.getBookById(event.workKey);
       if (book != null) {
         emit(state.copyWith(selectedBook: book, isLoading: false, error: null));
+        // After loading the book, load its editions
+        add(LoadEditionsForWork(event.workKey));
       } else {
         emit(state.copyWith(isLoading: false, error: 'Book not found'));
       }
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, error: e.toString()));
+    }
+  }
+
+  Future<void> _onLoadEditionsForWork(
+    LoadEditionsForWork event,
+    Emitter<BookState> emit,
+  ) async {
+    emit(state.copyWith(isLoading: true, error: null));
+    try {
+      // Fetch editions for the work
+      final editions = await bookRepository.getEditionsByWorkKey(event.workKey);
+      // Find the best readable edition
+      Book? bestEdition;
+      for (final edition in editions) {
+        if (edition.hasReadableFormat) {
+          bestEdition = edition;
+          break;
+        }
+      }
+      emit(state.copyWith(
+        editions: editions,
+        bestReadableEdition: bestEdition,
+        isLoading: false,
+        error: null,
+      ));
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: e.toString()));
     }

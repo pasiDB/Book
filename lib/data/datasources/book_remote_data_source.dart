@@ -12,6 +12,7 @@ abstract class BookRemoteDataSource {
   Future<BookModel?> getBookByWorkKey(String workKey);
   Future<List<BookModel>> getBooksByPage(int page);
   Future<String> getBookContent(String textUrl);
+  Future<List<BookModel>> getEditionsByWorkKey(String workKey);
 }
 
 class BookRemoteDataSourceImpl implements BookRemoteDataSource {
@@ -156,6 +157,18 @@ class BookRemoteDataSourceImpl implements BookRemoteDataSource {
           return _generateFallbackContent(contentUrl);
         }
       }
+    }
+  }
+
+  Future<List<BookModel>> getEditionsByWorkKey(String workKey) async {
+    try {
+      // Fetch editions for a work
+      final response = await dio.get('/works/$workKey/editions.json?limit=50');
+      final data = response.data;
+      final results = (data['entries'] as List<dynamic>?) ?? [];
+      return results.map((json) => BookModel.fromJson(json)).toList();
+    } catch (e) {
+      throw Exception('Failed to fetch editions for work: $e');
     }
   }
 

@@ -52,7 +52,7 @@ class BookModel extends Book {
     // Open Library subject API: https://openlibrary.org/subjects/{subject}.json
     // Each work in 'works' array
     return BookModel(
-      id: json['key'] as String? ?? '',
+      id: (json['key'] as String?)?.replaceAll('/works/', '') ?? '',
       title: json['title'] as String? ?? '',
       authors: (json['authors'] as List<dynamic>?)
               ?.map((a) => a['name'] as String? ?? '')
@@ -76,7 +76,7 @@ class BookModel extends Book {
   factory BookModel.fromOpenLibrarySearch(Map<String, dynamic> json) {
     // Open Library search API: https://openlibrary.org/search.json?q=...
     return BookModel(
-      id: json['key'] as String? ?? '',
+      id: (json['key'] as String?)?.replaceAll('/works/', '') ?? '',
       title: json['title'] as String? ?? '',
       authors: (json['author_name'] as List<dynamic>?)
               ?.map((a) => a as String)
@@ -102,7 +102,7 @@ class BookModel extends Book {
   factory BookModel.fromOpenLibraryWork(Map<String, dynamic> json) {
     // Open Library work API: https://openlibrary.org/works/OL12345W.json
     return BookModel(
-      id: json['key'] as String? ?? '',
+      id: (json['key'] as String?)?.replaceAll('/works/', '') ?? '',
       title: json['title'] as String? ?? '',
       authors: (json['authors'] as List<dynamic>?)
               ?.map((a) {

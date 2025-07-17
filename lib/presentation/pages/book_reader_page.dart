@@ -4,6 +4,10 @@ import '../bloc/book/book_bloc.dart';
 import '../bloc/book/book_event.dart';
 import '../bloc/book/book_state.dart';
 import '../../core/constants/app_constants.dart';
+import 'package:pdfx/pdfx.dart';
+import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 
 import '../../presentation/widgets/modern_loading_indicator.dart';
 
@@ -148,6 +152,14 @@ class _BookReaderPageState extends State<BookReaderPage> {
           }
         },
         builder: (context, state) {
+          // PDF support: if the book has a PDF URL, show PDF viewer
+          final pdfUrl = state.selectedBook?.formats['application/pdf'];
+          if (pdfUrl != null && pdfUrl.isNotEmpty) {
+            return _PdfReader(
+              pdfUrl: pdfUrl,
+              bookId: state.selectedBook!.id,
+            );
+          }
           Widget? progressBar;
           if (state.bookContentChunks.isNotEmpty) {
             final progress =
@@ -279,6 +291,108 @@ class _BookReaderPageState extends State<BookReaderPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PdfReader extends StatefulWidget {
+  final String pdfUrl;
+  final String bookId;
+  const _PdfReader({required this.pdfUrl, required this.bookId});
+
+  @override
+  State<_PdfReader> createState() => _PdfReaderState();
+}
+
+class _PdfReaderState extends State<_PdfReader> {
+  String? localPath;
+  bool isLoading = true;
+  int _currentPage = 1;
+  int _totalPages = 0;
+  PdfController? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    downloadFile();
+  }
+
+  Future<void> downloadFile() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final response = await http.get(Uri.parse(widget.pdfUrl));
+      final bytes = response.bodyBytes;
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/${widget.bookId}.pdf');
+      await file.writeAsBytes(bytes);
+
+      setState(() {
+        localPath = file.path;
+        isLoading = false;
+      });
+
+      _initializeController(file);
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading PDF: $e')),
+        );
+      }
+    }
+  }
+
+  void _initializeController(File file) async {
+    _controller = PdfController(
+      document: PdfDocument.openFile(file.path),
+    );
+    final document = await _controller!.document;
+    if (mounted) {
+      setState(() {
+        _totalPages = document.pagesCount;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Center(child: ModernLoadingIndicator());
+    }
+
+    if (_controller == null) {
+      return const Center(child: Text('Failed to load PDF'));
+    }
+
+    return Column(
+      children: [
+        LinearProgressIndicator(
+          value: _totalPages > 0 ? _currentPage / _totalPages : 0,
+          minHeight: 4,
+        ),
+        Expanded(
+          child: PdfView(
+            controller: _controller!,
+            onPageChanged: (page) {
+              setState(() {
+                _currentPage = page;
+              });
+            },
+            scrollDirection: Axis.vertical,
+          ),
+        ),
+      ],
     );
   }
 }

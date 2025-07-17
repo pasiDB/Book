@@ -106,6 +106,13 @@ class BookRepositoryOptimized implements BookRepository, ReadingRepository {
     }
   }
 
+  @override
+  Future<List<Book>> getEditionsByWorkKey(String workKey) async {
+    final editionModels = await remoteDataSource.getEditionsByWorkKey(workKey);
+    // Convert BookModel to Book if needed
+    return editionModels.map((e) => e as Book).toList();
+  }
+
   // ReadingRepository implementation
   @override
   Future<ReadingProgress?> getReadingProgress(String workKey) async {

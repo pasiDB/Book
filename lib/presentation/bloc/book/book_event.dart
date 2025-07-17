@@ -112,3 +112,10 @@ class LoadMoreBooks extends BookEvent {
   @override
   List<Object?> get props => [category, currentCount];
 }
+
+class LoadEditionsForWork extends BookEvent {
+  final String workKey;
+  const LoadEditionsForWork(this.workKey);
+  @override
+  List<Object?> get props => [workKey];
+}
