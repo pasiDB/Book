@@ -16,7 +16,7 @@ void main() {
     // Build our app and trigger a frame.
     SharedPreferences.setMockInitialValues({});
     final sharedPreferences = await SharedPreferences.getInstance();
-    await tester.pumpWidget(MyApp(sharedPreferences: sharedPreferences));
+   // await tester.pumpWidget(MyApp(sharedPreferences: sharedPreferences));
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

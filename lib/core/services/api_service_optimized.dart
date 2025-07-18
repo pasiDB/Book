@@ -16,7 +16,7 @@ class ApiServiceOptimized {
   final List<Dio> _connectionPool = [];
   int _currentConnectionIndex = 0;
 
-  ApiServiceOptimized() : _dio = Dio() {
+  ApiServiceOptimized(Dio dio) : _dio = dio {
     _setupInterceptors();
     _initializeConnectionPool();
   }
@@ -24,9 +24,8 @@ class ApiServiceOptimized {
   void _initializeConnectionPool() {
     for (int i = 0; i < _maxConcurrentRequests; i++) {
       final dio = Dio();
-      dio.options.connectTimeout = _requestTimeout;
-      dio.options.receiveTimeout = _requestTimeout;
-      dio.options.sendTimeout = _requestTimeout;
+      // Copy configuration from the main Dio instance
+      dio.options = _dio.options.copyWith();
       _connectionPool.add(dio);
     }
   }
@@ -65,9 +64,14 @@ class ApiServiceOptimized {
         queryParameters.entries.toList()
           ..sort((a, b) => a.key.compareTo(b.key)),
       );
-      buffer.write(jsonEncode(sortedParams));
+      buffer.write('?');
+      buffer.write(sortedParams.entries
+          .map((entry) => '${entry.key}=${entry.value}')
+          .join('&'));
     }
-    return buffer.toString();
+    final cacheKey = buffer.toString();
+    print('🔑 Generated cache key: $cacheKey');
+    return cacheKey;
   }
 
   bool _isCacheValid(String cacheKey, Duration? customExpiry) {
@@ -104,6 +108,9 @@ class ApiServiceOptimized {
     _pendingRequests[cacheKey] = completer;
 
     try {
+      print(
+          '🌐 Making network request to: $path with params: $queryParameters');
+      print('🔗 Full URL would be: ${_nextConnection.options.baseUrl}$path');
       final response = await _nextConnection.get(
         path,
         queryParameters: queryParameters,
@@ -116,6 +123,7 @@ class ApiServiceOptimized {
         ),
       );
 
+      print('✅ Response received: ${response.statusCode}');
       final data = response.data as T;
 
       // Cache the response
@@ -128,11 +136,17 @@ class ApiServiceOptimized {
       _pendingRequests.remove(cacheKey);
       return data;
     } on DioException catch (e) {
-      completer.completeError(_handleDioError(e));
+      print('❌ Dio error for $path: ${e.message}');
+      print('❌ Dio error type: ${e.type}');
+      print('❌ Dio response: ${e.response?.statusCode}');
+      final apiException = _handleDioError(e);
+      completer.completeError(apiException);
       _pendingRequests.remove(cacheKey);
       rethrow;
     } catch (e) {
-      completer.completeError(ApiException('Unexpected error: $e'));
+      print('❌ Unexpected error for $path: $e');
+      final apiException = ApiException('Unexpected error: $e');
+      completer.completeError(apiException);
       _pendingRequests.remove(cacheKey);
       rethrow;
     }

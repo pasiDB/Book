@@ -2,6 +2,7 @@ import '../../domain/entities/book.dart';
 import '../../domain/repositories/book_repository.dart';
 import '../datasources/book_remote_data_source_optimized_v2.dart';
 import '../datasources/book_local_data_source.dart';
+import '../datasources/book_local_data_source_hive.dart';
 import '../../domain/entities/reading_progress.dart';
 import '../../domain/repositories/reading_repository.dart';
 
@@ -14,22 +15,107 @@ class BookRepositoryOptimized implements BookRepository, ReadingRepository {
     required this.localDataSource,
   });
 
+  // Helper getter for Hive data source if available
+  BookLocalDataSourceHive? get _hiveDataSource =>
+      localDataSource is BookLocalDataSourceHive
+          ? localDataSource as BookLocalDataSourceHive
+          : null;
+
   @override
   Future<List<Book>> getBooksByTopic(String topic) async {
+    print('📚 Getting books for topic: $topic');
+
     try {
-      // Use pagination to load only 10 books initially
+      // Check if we have cached data for this topic
+      final cachedBooks = await localDataSource.getCachedBooksByCategory(topic);
+      if (cachedBooks.isNotEmpty) {
+        print('📦 Found ${cachedBooks.length} cached books for topic: $topic');
+        return cachedBooks;
+      } else {
+        print('📭 No cached books found for topic: $topic');
+      }
+
+      // Check if this is the first launch (if using Hive)
+      final hiveDataSource = _hiveDataSource;
+      if (hiveDataSource != null) {
+        final isFirstLaunch = await hiveDataSource.isFirstLaunch();
+        print('🔍 First launch detection result: $isFirstLaunch');
+
+        if (isFirstLaunch) {
+          // First launch: Load all categories from API
+          print('🚀 First launch detected - loading all categories from API');
+          await _loadAllCategoriesFromAPI();
+          await hiveDataSource.markFirstLaunchCompleted();
+
+          // Return books for the requested topic
+          final updatedCachedBooks =
+              await localDataSource.getCachedBooksByCategory(topic);
+          print(
+              '📦 After first launch loading, found ${updatedCachedBooks.length} books for topic: $topic');
+          return updatedCachedBooks;
+        } else {
+          print(
+              '🔄 Subsequent launch - but no cached data, falling back to API for topic: $topic');
+        }
+      } else {
+        print('⚠️ Not using Hive data source, using regular API call');
+      }
+
+      // Regular API call
+      print('📥 Loading books from API for topic: $topic');
       final books = await remoteDataSource.getBooksByTopicWithPagination(topic,
-          limit: 10, offset: 0);
+          limit: 50, offset: 0);
+      print('📥 Received ${books.length} books from API for topic: $topic');
       await localDataSource.cacheBooksByCategory(topic, books);
+      print('💾 Cached ${books.length} books for topic: $topic');
       return books;
     } catch (e) {
+      print('❌ Error in getBooksByTopic for $topic: $e');
+
       // Fallback to cached data if available
       final cachedBooks = await localDataSource.getCachedBooksByCategory(topic);
       if (cachedBooks.isNotEmpty) {
+        print('📦 Returning cached books as fallback');
         return cachedBooks;
       }
+
       rethrow;
     }
+  }
+
+  /// Load all book categories from API on first launch
+  Future<void> _loadAllCategoriesFromAPI() async {
+    print('🔄 Loading all categories from API...');
+
+    final futures = [
+      'fiction',
+      'science',
+      'history',
+      'philosophy',
+      'poetry',
+      'drama',
+      'biography',
+      'adventure',
+      'romance',
+      'mystery'
+    ].map((category) async {
+      try {
+        print('📥 Fetching books for category: $category');
+        final books = await remoteDataSource.getBooksByTopicWithPagination(
+            category,
+            limit:
+                50, // Load more books per category for better offline experience
+            offset: 0);
+        await localDataSource.cacheBooksByCategory(category, books);
+        print('✅ Cached ${books.length} books for category: $category');
+      } catch (e) {
+        print('❌ Error loading category $category: $e');
+        // Continue with other categories even if one fails
+      }
+    });
+
+    await Future.wait(futures);
+    print('✅ Completed loading all categories');
   }
 
   @override

@@ -1,22 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-import 'core/constants/app_constants.dart';
+import 'core/di/dependency_injection_hive.dart';
 import 'core/theme/app_theme.dart';
-import 'data/datasources/book_remote_data_source.dart';
-import 'data/datasources/book_local_data_source.dart';
-import 'data/repositories/book_repository_impl.dart';
-import 'data/repositories/reading_repository_impl.dart';
-import 'domain/repositories/book_repository.dart';
-import 'domain/repositories/reading_repository.dart';
-import 'domain/usecases/get_books_by_topic.dart';
-import 'domain/usecases/search_books.dart';
-import 'domain/usecases/get_book_content.dart';
-import 'domain/usecases/get_book_content_by_gutenberg_id.dart';
 import 'presentation/bloc/book/book_bloc_optimized_v2.dart';
 import 'presentation/pages/home_page.dart';
 import 'presentation/pages/search_page.dart';
@@ -24,125 +12,68 @@ import 'presentation/pages/library_page.dart';
 import 'presentation/pages/book_detail_page.dart';
 import 'presentation/pages/book_reader_page.dart';
 import 'presentation/pages/settings_page.dart';
+
 import 'presentation/widgets/modern_loading_indicator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Hive
-  await Hive.initFlutter();
+  print('🚀 [Main] Starting Hive-optimized app initialization...');
 
-  // Initialize SharedPreferences
-  final sharedPreferences = await SharedPreferences.getInstance();
+  try {
+    // Initialize Hive
+    print('📦 [Main] Initializing Hive...');
+    await Hive.initFlutter();
+    print('✅ [Main] Hive initialized successfully');
 
-  runApp(MyApp(sharedPreferences: sharedPreferences));
+    // Initialize Hive-optimized dependency injection
+    print('🏗️ [Main] Initializing Hive dependency injection...');
+    await DependencyInjectionHive.initialize();
+
+    print('✅ [Main] Hive dependency injection completed');
+
+    print('🎉 [Main] All initialization completed successfully');
+  } catch (e, stackTrace) {
+    print('❌ [Main] Initialization failed: $e');
+    print('📍 [Main] Stack trace: $stackTrace');
+    // Still run the app to see what happens
+  }
+
+  runApp(const MyAppHiveOptimized());
 }
 
-class MyApp extends StatelessWidget {
-  final SharedPreferences sharedPreferences;
-
-  const MyApp({super.key, required this.sharedPreferences});
+class MyAppHiveOptimized extends StatelessWidget {
+  const MyAppHiveOptimized({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Initialize Dio with increased timeouts
-    final dio = Dio(BaseOptions(
-      baseUrl: AppConstants.baseUrl,
-      connectTimeout: const Duration(seconds: 60), // Increased from 30
-      receiveTimeout: const Duration(seconds: 60), // Increased from 30
-      sendTimeout: const Duration(seconds: 60), // Added send timeout
-      headers: {
-        'User-Agent': 'BookReader/1.0 (Flutter App)',
-        'Accept': 'application/json',
-      },
-    ));
-
-    // Add interceptors for better error handling
-    dio.interceptors.add(InterceptorsWrapper(
-      onError: (error, handler) {
-        print('Dio Error: ${error.message}');
-        print('Error Type: ${error.type}');
-        print('Error Response: ${error.response?.statusCode}');
-
-        // Handle specific error types
-        if (error.type == DioExceptionType.receiveTimeout) {
-          print('Network timeout - request took too long to receive data');
-        } else if (error.type == DioExceptionType.connectionTimeout) {
-          print('Connection timeout - failed to establish connection');
-        } else if (error.type == DioExceptionType.connectionError) {
-          print('Connection error - no internet connection');
-        }
-
-        handler.next(error);
-      },
-      onRequest: (options, handler) {
-        print('Making request to: ${options.uri}');
-        handler.next(options);
-      },
-      onResponse: (response, handler) {
-        print('Received response: ${response.statusCode}');
-        handler.next(response);
-      },
-    ));
-
-    // Initialize data sources
-    final bookRemoteDataSource = BookRemoteDataSourceImpl(dio);
-    final bookLocalDataSource = BookLocalDataSourceImpl(sharedPreferences);
-
-    // Initialize repositories
-    final BookRepository bookRepository = BookRepositoryImpl(
-      remoteDataSource: bookRemoteDataSource,
-      localDataSource: bookLocalDataSource,
-    );
-
-    final ReadingRepository readingRepository =
-        ReadingRepositoryImpl(sharedPreferences);
-
-    // Initialize use cases
-    final getBooksByTopic = GetBooksByTopic(bookRepository);
-    final getBooksByTopicWithPagination =
-        GetBooksByTopicWithPagination(bookRepository);
-    final searchBooks = SearchBooks(bookRepository);
-    final getBookContent = GetBookContent(bookRepository);
-    final getBookContentByGutenbergId =
-        GetBookContentByGutenbergId(bookRepository);
-
-    // Initialize BLoCs
-    final bookBloc = BookBlocOptimizedV2(
-      getBooksByTopic: getBooksByTopic,
-      getBooksByTopicWithPagination: getBooksByTopicWithPagination,
-      searchBooks: searchBooks,
-      getBookContent: getBookContent,
-      getBookContentByGutenbergId: getBookContentByGutenbergId,
-      bookRepository: bookRepository,
-      readingRepository: readingRepository,
-    );
-
     return MultiBlocProvider(
       providers: [
-        BlocProvider<BookBlocOptimizedV2>.value(value: bookBloc),
+        BlocProvider<BookBlocOptimizedV2>.value(
+          value: DependencyInjectionHive.bookBloc,
+        ),
       ],
       child: MaterialApp(
-        title: 'Book Reader',
+        title: 'Book Reader - Hive Optimized',
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
         debugShowCheckedModeBanner: false,
-        home: SplashScreen(bookBloc: bookBloc),
+        home: const SplashScreenHiveOptimized(),
       ),
     );
   }
 }
 
-class SplashScreen extends StatefulWidget {
-  final BookBlocOptimizedV2 bookBloc;
-  const SplashScreen({super.key, required this.bookBloc});
+class SplashScreenHiveOptimized extends StatefulWidget {
+  const SplashScreenHiveOptimized({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  State<SplashScreenHiveOptimized> createState() =>
+      _SplashScreenHiveOptimizedState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenHiveOptimizedState extends State<SplashScreenHiveOptimized> {
   double _progress = 0.0;
   bool _loadingDone = false;
 
@@ -153,7 +84,8 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _preloadAllCategories() async {
-    await widget.bookBloc.loadDefaultCategoryAndSetState();
+    final bookBloc = DependencyInjectionHive.bookBloc;
+    await bookBloc.loadDefaultCategoryAndSetState();
     setState(() {
       _progress = 1.0;
     });
@@ -162,14 +94,14 @@ class _SplashScreenState extends State<SplashScreen> {
       _loadingDone = true;
     });
     // Start preloading other categories in the background
-    widget.bookBloc.preloadOtherCategoriesInBackground();
+    bookBloc.preloadOtherCategoriesInBackground();
   }
 
   @override
   Widget build(BuildContext context) {
     if (_loadingDone) {
       // Use router-based navigation after splash
-      return _MainAppRouter(bookBloc: widget.bookBloc);
+      return _MainAppRouterHiveOptimized();
     }
     final theme = Theme.of(context);
     return Scaffold(
@@ -207,10 +139,8 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
-class _MainAppRouter extends StatelessWidget {
-  final BookBlocOptimizedV2 bookBloc;
-
-  const _MainAppRouter({required this.bookBloc});
+class _MainAppRouterHiveOptimized extends StatelessWidget {
+  const _MainAppRouterHiveOptimized();
 
   @override
   Widget build(BuildContext context) {
@@ -263,7 +193,9 @@ class _MainAppRouter extends StatelessWidget {
     );
     return MultiBlocProvider(
       providers: [
-        BlocProvider<BookBlocOptimizedV2>.value(value: bookBloc),
+        BlocProvider<BookBlocOptimizedV2>.value(
+          value: DependencyInjectionHive.bookBloc,
+        ),
       ],
       child: MaterialApp.router(
         title: 'Book Reader',

@@ -7,7 +7,12 @@ class GetBooksByTopic {
   GetBooksByTopic(this.repository);
 
   Future<List<Book>> call(String topic) async {
-    return await repository.getBooksByTopic(topic);
+    print('🎯 [UseCase] GetBooksByTopic called for topic: $topic');
+    print('🎯 [UseCase] Repository type: ${repository.runtimeType}');
+    final result = await repository.getBooksByTopic(topic);
+    print(
+        '🎯 [UseCase] Repository returned ${result.length} books for topic: $topic');
+    return result;
   }
 }
 
@@ -18,7 +23,13 @@ class GetBooksByTopicWithPagination {
 
   Future<List<Book>> call(String topic,
       {int limit = 10, int offset = 0}) async {
-    return await repository.getBooksByTopicWithPagination(topic,
+    print(
+        '🎯 [UseCase] GetBooksByTopicWithPagination called for topic: $topic (limit: $limit, offset: $offset)');
+    print('🎯 [UseCase] Repository type: ${repository.runtimeType}');
+    final result = await repository.getBooksByTopicWithPagination(topic,
         limit: limit, offset: offset);
+    print(
+        '🎯 [UseCase] Repository returned ${result.length} books for topic: $topic');
+    return result;
   }
 }

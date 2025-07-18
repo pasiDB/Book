@@ -63,7 +63,7 @@ class DependencyInjectionOptimized {
   }
 
   static void _initializeDataSources() {
-    _apiService = ApiServiceOptimized();
+    _apiService = ApiServiceOptimized(_dio);
     _cacheService = CacheServiceOptimized(_sharedPreferences);
     _remoteDataSource =
         BookRemoteDataSourceOptimizedImpl(_apiService, _cacheService);
