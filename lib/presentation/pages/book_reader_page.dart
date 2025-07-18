@@ -4,7 +4,6 @@ import '../bloc/book/book_bloc.dart';
 import '../bloc/book/book_event.dart';
 import '../bloc/book/book_state.dart';
 import '../../core/constants/app_constants.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
 import '../../presentation/widgets/modern_loading_indicator.dart';
@@ -20,7 +19,7 @@ class BookReaderPage extends StatefulWidget {
 
 class _BookReaderPageState extends State<BookReaderPage> {
   double fontSize = AppConstants.defaultFontSize;
-  final ScrollController _scrollController = ScrollController();
+  final PageController _pageController = PageController();
   bool _isAtEnd = false;
   bool _progressLoaded = false;
   bool _progressRequested = false;
@@ -29,50 +28,35 @@ class _BookReaderPageState extends State<BookReaderPage> {
   bool _isLoadingNextChunk = false;
   bool _isScrolling = false;
   bool _showControls = true;
+  int _currentPage = 0;
+  List<String> _pages = [];
   DateTime _lastProgressSave = DateTime.now();
   static const _progressSaveThrottle = Duration(seconds: 2);
-  static const _scrollThreshold = 500.0; // Increased threshold
-  static const _scrollAnimationDuration = Duration(milliseconds: 300);
+  final EdgeInsets contentPadding = const EdgeInsets.symmetric(
+    horizontal: 24,
+    vertical: 16,
+  );
 
   @override
   void initState() {
     super.initState();
-    // Step 1: Always load book details first
     context.read<BookBloc>().add(LoadBookById(widget.bookId));
-    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _saveReadingProgress();
-    _scrollController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
-  void _onScroll() {
-    if (_isLoadingNextChunk || !_scrollController.hasClients) return;
+  void _onPageChanged(int page) {
+    setState(() {
+      _currentPage = page;
+      _isAtEnd = page == _pages.length - 1;
+    });
 
     final now = DateTime.now();
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    final currentScroll = _scrollController.position.pixels;
-    final viewportDimension = _scrollController.position.viewportDimension;
-
-    // Calculate how close to the bottom we are as a percentage
-    final scrollPercentage = (maxScroll - currentScroll) / viewportDimension;
-
-    if (!_isScrolling && scrollPercentage <= 0.3) {
-      // Within 30% of the bottom
-      setState(() {
-        _isAtEnd = true;
-      });
-    } else if (_isAtEnd && scrollPercentage > 0.4) {
-      // Move away more than 40% from bottom
-      setState(() {
-        _isAtEnd = false;
-      });
-    }
-
-    // Throttle progress saving
     if (now.difference(_lastProgressSave) > _progressSaveThrottle) {
       _lastProgressSave = now;
       _saveReadingProgress();
@@ -80,15 +64,13 @@ class _BookReaderPageState extends State<BookReaderPage> {
   }
 
   void _saveReadingProgress() {
-    if (!_scrollController.hasClients) return;
-
     final bloc = context.read<BookBloc>();
     final state = bloc.state;
     if (state.selectedBook != null) {
       bloc.add(SaveReadingProgress(
         bookId: state.selectedBook!.id,
         chunkIndex: state.currentChunkIndex,
-        scrollOffset: _scrollController.offset,
+        scrollOffset: _currentPage.toDouble(),
       ));
     }
   }
@@ -98,109 +80,148 @@ class _BookReaderPageState extends State<BookReaderPage> {
   }
 
   Future<void> _loadNextChunk(BookState state) async {
-    if (_isLoadingNextChunk ||
-        !state.hasMoreContent ||
-        !_scrollController.hasClients) return;
+    if (_isLoadingNextChunk || !state.hasMoreContent) return;
 
     setState(() {
       _isLoadingNextChunk = true;
-      _isScrolling = true;
     });
 
     try {
-      // Save the current content height and scroll position
-      final previousContentHeight = _scrollController.position.maxScrollExtent;
-      final previousScrollPosition = _scrollController.offset;
-
-      // Load next chunk
       context.read<BookBloc>().add(
             LoadBookContentChunk(chunkIndex: state.currentChunkIndex + 1),
           );
 
-      // Wait for the content to be updated
       await Future.delayed(const Duration(milliseconds: 150));
-
-      // Calculate new scroll position to maintain relative position
-      if (_scrollController.hasClients) {
-        final newContentHeight = _scrollController.position.maxScrollExtent;
-        final heightDifference = newContentHeight - previousContentHeight;
-
-        // If we're near the bottom, scroll to show new content
-        if (previousScrollPosition > previousContentHeight - _scrollThreshold) {
-          await _scrollController.animateTo(
-            previousScrollPosition +
-                (heightDifference * 0.3), // Scroll to show 30% of new content
-            duration: _scrollAnimationDuration,
-            curve: Curves.easeOutCubic,
-          );
-        }
-      }
     } finally {
       setState(() {
         _isLoadingNextChunk = false;
-        _isScrolling = false;
         _isAtEnd = false;
       });
     }
   }
 
-  Widget _buildBookContent(String content) {
+  List<String> _splitIntoPages(String content, BoxConstraints constraints) {
+    final availableHeight =
+        constraints.maxHeight - (contentPadding.top + contentPadding.bottom);
+    final availableWidth =
+        constraints.maxWidth - (contentPadding.left + contentPadding.right);
+
+    // Calculate how many characters fit in one line
+    final charPerLine = (availableWidth / (fontSize * 0.6)).floor();
+
+    // Calculate how many lines fit in one page
+    final linesPerPage = (availableHeight / (fontSize * 1.6)).floor();
+
+    // Calculate approximate characters per page
+    final charsPerPage = charPerLine * linesPerPage;
+
+    final pages = <String>[];
+    int startIndex = 0;
+
+    while (startIndex < content.length) {
+      // Find the end of the last complete sentence in this page
+      int endIndex = startIndex + charsPerPage;
+      if (endIndex < content.length) {
+        // Look for the end of a sentence (.!?) followed by a space or newline
+        final searchEnd = endIndex + 100; // Look ahead up to 100 chars
+        final searchEndIndex =
+            searchEnd < content.length ? searchEnd : content.length;
+        final searchText = content.substring(endIndex, searchEndIndex);
+        final sentenceEndMatch = RegExp(r'[.!?]\s+').firstMatch(searchText);
+
+        if (sentenceEndMatch != null) {
+          endIndex += sentenceEndMatch.end;
+        } else {
+          // If no sentence end found, look for last space
+          final lastSpace =
+              content.substring(startIndex, endIndex).lastIndexOf(' ');
+          if (lastSpace > 0) {
+            endIndex = startIndex + lastSpace;
+          }
+        }
+      } else {
+        endIndex = content.length;
+      }
+
+      pages.add(content.substring(startIndex, endIndex).trim());
+      startIndex = endIndex;
+    }
+
+    return pages;
+  }
+
+  Widget _buildPageContent(String content) {
+    return SelectionArea(
+      child: Text(
+        content,
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              fontSize: fontSize,
+              height: 1.6,
+            ),
+      ),
+    );
+  }
+
+  Widget _buildReader(String content) {
     return Stack(
       children: [
         LayoutBuilder(
           builder: (context, constraints) {
-            // Calculate approximate number of characters that fit in viewport
-            final charPerLine =
-                (constraints.maxWidth / (fontSize * 0.6)).floor();
-            final linesInViewport =
-                (constraints.maxHeight / (fontSize * 1.6)).floor();
-            final charsInViewport = charPerLine * linesInViewport;
+            _pages = _splitIntoPages(content, constraints);
 
-            // Split content into smaller chunks for virtualization
-            final chunks = <String>[];
-            for (var i = 0; i < content.length; i += charsInViewport) {
-              chunks.add(content.substring(
-                  i,
-                  (i + charsInViewport) < content.length
-                      ? i + charsInViewport
-                      : content.length));
-            }
-
-            return ListView.builder(
-              controller: _scrollController,
-              padding: EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 16,
-                bottom: 16 +
-                    (MediaQuery.of(context).padding.bottom +
-                        56), // Bottom bar height
-              ),
-              itemCount: chunks.length,
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
+            return PageView.builder(
+              controller: _pageController,
+              onPageChanged: _onPageChanged,
+              itemCount: _pages.length,
               itemBuilder: (context, index) {
-                final isLastChunk = index == chunks.length - 1;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SelectionArea(
-                      child: Text(
-                        chunks[index],
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontSize: fontSize,
-                              height: 1.6,
-                            ),
-                      ),
-                    ),
-                    if (isLastChunk) const SizedBox(height: 32),
-                  ],
+                return Padding(
+                  padding: contentPadding,
+                  child: _buildPageContent(_pages[index]),
                 );
               },
             );
           },
         ),
+        if (_showControls) ...[
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            child: GestureDetector(
+              onTap: () {
+                if (_currentPage > 0) {
+                  _pageController.previousPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                }
+              },
+              child: Container(
+                width: 60,
+                color: Colors.transparent,
+              ),
+            ),
+          ),
+          Positioned(
+            right: 0,
+            top: 0,
+            bottom: 0,
+            child: GestureDetector(
+              onTap: () {
+                if (_currentPage < _pages.length - 1) {
+                  _pageController.nextPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                }
+              },
+              child: Container(
+                width: 60,
+                color: Colors.transparent,
+              ),
+            ),
+          ),
+        ],
         Positioned(
           left: 0,
           right: 0,
@@ -234,9 +255,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
                 height: 56,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Font size decrease
                     IconButton(
                       icon: const Icon(Icons.remove),
                       onPressed: () {
@@ -250,9 +269,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
                         }
                       },
                     ),
-                    // Current font size
                     Text('${fontSize.round()}'),
-                    // Font size increase
                     IconButton(
                       icon: const Icon(Icons.add),
                       onPressed: () {
@@ -267,7 +284,8 @@ class _BookReaderPageState extends State<BookReaderPage> {
                       },
                     ),
                     const Spacer(),
-                    // Progress indicator or load more button
+                    Text('${_currentPage + 1} / ${_pages.length}'),
+                    const Spacer(),
                     if (state.hasMoreContent && _isAtEnd)
                       ElevatedButton(
                         onPressed: _isLoadingNextChunk
@@ -344,21 +362,18 @@ class _BookReaderPageState extends State<BookReaderPage> {
         },
         child: BlocConsumer<BookBloc, BookState>(
           listener: (context, state) {
-            // Step 2: When book details are loaded, load reading progress (once)
             if (state.selectedBook != null && !_progressRequested) {
               context
                   .read<BookBloc>()
                   .add(LoadReadingProgress(state.selectedBook!.id));
               _progressRequested = true;
             }
-            // Step 3: When book details are loaded, always load content (once)
             if (state.selectedBook != null && !_contentRequested) {
               context
                   .read<BookBloc>()
                   .add(LoadBookContentByGutenbergId(state.selectedBook!.id));
               _contentRequested = true;
             }
-            // Step 4: When content is loaded, restore chunk and scroll (once, if progress exists)
             if (!_restorationDone &&
                 state.bookContentChunks.isNotEmpty &&
                 state.readingProgress != null) {
@@ -369,7 +384,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
               }
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (progress.scrollOffset > 0.0) {
-                  _scrollController.jumpTo(progress.scrollOffset);
+                  _pageController.jumpToPage(progress.scrollOffset.round());
                 }
                 _restorationDone = true;
               });
@@ -404,7 +419,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
                 children: [
                   if (progressBar != null) progressBar,
                   Expanded(
-                    child: _buildBookContent(state.bookContent!),
+                    child: _buildReader(state.bookContent!),
                   ),
                 ],
               );
