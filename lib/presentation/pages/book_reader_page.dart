@@ -229,6 +229,15 @@ class _BookReaderPageState extends State<BookReaderPage> {
       ),
       body: BlocConsumer<BookBlocOptimizedV2, BookState>(
         listener: (context, state) {
+          // Clear pages when book content is cleared (new book loaded)
+          if (state.bookContentChunks.isEmpty && _pages.isNotEmpty) {
+            setState(() {
+              _pages.clear();
+              _currentPageIndex = 0;
+              _isProcessingContent = false;
+            });
+          }
+
           // Handle reading progress updates
           if (state.readingProgress != null) {
             setState(() {

@@ -268,24 +268,63 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
     if (_bookDetailsCache.containsKey(event.bookId)) {
       final cachedBook = _bookDetailsCache[event.bookId];
       emit(state.copyWith(
-          selectedBook: cachedBook, isLoading: false, error: null));
+        selectedBook: cachedBook,
+        isLoading: false,
+        error: null,
+        // Clear previous book content to ensure fresh content load
+        bookContent: null,
+        bookContentChunks: [],
+        currentChunkIndex: 0,
+        hasMoreContent: false,
+      ));
       return;
     }
 
-    emit(state.copyWith(isLoading: true, error: null));
+    emit(state.copyWith(
+      isLoading: true,
+      error: null,
+      // Clear previous book content when loading new book
+      bookContent: null,
+      bookContentChunks: [],
+      currentChunkIndex: 0,
+      hasMoreContent: false,
+    ));
     try {
       final book = await _bookRepository.getBookById(event.bookId);
       if (book != null) {
         // Cache the book details
         _bookDetailsCache[event.bookId] = book;
 
-        emit(state.copyWith(selectedBook: book, isLoading: false, error: null));
+        emit(state.copyWith(
+          selectedBook: book,
+          isLoading: false,
+          error: null,
+          // Keep content cleared for fresh load
+          bookContent: null,
+          bookContentChunks: [],
+          currentChunkIndex: 0,
+          hasMoreContent: false,
+        ));
       } else {
-        emit(state.copyWith(isLoading: false, error: 'Book not found'));
+        emit(state.copyWith(
+          isLoading: false,
+          error: 'Book not found',
+          bookContent: null,
+          bookContentChunks: [],
+          currentChunkIndex: 0,
+          hasMoreContent: false,
+        ));
       }
     } catch (e) {
       final errorMessage = _getUserFriendlyError(e.toString());
-      emit(state.copyWith(isLoading: false, error: errorMessage));
+      emit(state.copyWith(
+        isLoading: false,
+        error: errorMessage,
+        bookContent: null,
+        bookContentChunks: [],
+        currentChunkIndex: 0,
+        hasMoreContent: false,
+      ));
     }
   }
 
