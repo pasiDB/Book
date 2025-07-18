@@ -72,6 +72,22 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  String _getUserFriendlyErrorMessage(String error) {
+    if (error.contains('timeout') || error.contains('Timeout')) {
+      return 'The request took too long to complete. This might be due to a slow internet connection or server issues. Please try again.';
+    } else if (error.contains('connection') || error.contains('Connection')) {
+      return 'No internet connection. Please check your network settings and try again.';
+    } else if (error.contains('Failed to fetch books')) {
+      return 'Failed to load books from the server. Please try again later or select a different category.';
+    } else if (error.contains('No books found')) {
+      return 'No books found for this category. Please try a different category.';
+    } else if (error.contains('DioException')) {
+      return 'Network error occurred. Please check your internet connection and try again.';
+    } else {
+      return 'An unexpected error occurred. Please try again.';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -150,10 +166,10 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.error_outline,
                           size: 64,
-                          color: Colors.red,
+                          color: theme.colorScheme.error,
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -161,20 +177,44 @@ class _HomePageState extends State<HomePage> {
                           style: theme.textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          state.error!,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            _getUserFriendlyErrorMessage(state.error!),
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: () {
-                            final bloc = context.read<BookBlocOptimizedV2>();
-                            bloc.add(LoadBooksByTopic(selectedCategory!));
-                          },
-                          child: const Text('Retry'),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                final bloc =
+                                    context.read<BookBlocOptimizedV2>();
+                                bloc.add(LoadBooksByTopic(selectedCategory!));
+                              },
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Retry'),
+                            ),
+                            const SizedBox(width: 16),
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                // Try a different category
+                                final categories = AppConstants.bookCategories;
+                                final currentIndex =
+                                    categories.indexOf(selectedCategory!);
+                                final nextIndex =
+                                    (currentIndex + 1) % categories.length;
+                                _switchCategory(categories[nextIndex]);
+                              },
+                              icon: const Icon(Icons.swap_horiz),
+                              label: const Text('Try Different Category'),
+                            ),
+                          ],
                         ),
                       ],
                     ),

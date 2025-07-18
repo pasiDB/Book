@@ -45,11 +45,44 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize Dio
+    // Initialize Dio with increased timeouts
     final dio = Dio(BaseOptions(
       baseUrl: AppConstants.baseUrl,
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
+      connectTimeout: const Duration(seconds: 60), // Increased from 30
+      receiveTimeout: const Duration(seconds: 60), // Increased from 30
+      sendTimeout: const Duration(seconds: 60), // Added send timeout
+      headers: {
+        'User-Agent': 'BookReader/1.0 (Flutter App)',
+        'Accept': 'application/json',
+      },
+    ));
+
+    // Add interceptors for better error handling
+    dio.interceptors.add(InterceptorsWrapper(
+      onError: (error, handler) {
+        print('Dio Error: ${error.message}');
+        print('Error Type: ${error.type}');
+        print('Error Response: ${error.response?.statusCode}');
+
+        // Handle specific error types
+        if (error.type == DioExceptionType.receiveTimeout) {
+          print('Network timeout - request took too long to receive data');
+        } else if (error.type == DioExceptionType.connectionTimeout) {
+          print('Connection timeout - failed to establish connection');
+        } else if (error.type == DioExceptionType.connectionError) {
+          print('Connection error - no internet connection');
+        }
+
+        handler.next(error);
+      },
+      onRequest: (options, handler) {
+        print('Making request to: ${options.uri}');
+        handler.next(options);
+      },
+      onResponse: (response, handler) {
+        print('Received response: ${response.statusCode}');
+        handler.next(response);
+      },
     ));
 
     // Initialize data sources

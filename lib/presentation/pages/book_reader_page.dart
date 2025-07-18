@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:async';
 import '../bloc/book/book_bloc_optimized_v2.dart';
 import '../bloc/book/book_event.dart';
 import '../bloc/book/book_state.dart';
@@ -17,10 +19,14 @@ class BookReaderPage extends StatefulWidget {
 }
 
 class _BookReaderPageState extends State<BookReaderPage> {
-  final ScrollController _scrollController = ScrollController();
-  int _currentChunkIndex = 0;
-  double _scrollOffset = 0.0;
+  final PageController _pageController = PageController();
+  int _currentPageIndex = 0;
+  List<String> _pages = [];
   bool _isLoadingMore = false;
+  bool _isProcessingContent = false;
+  double _fontSize = 16.0;
+  double _lineHeight = 1.6;
+  EdgeInsets _pagePadding = const EdgeInsets.all(20.0);
 
   @override
   void initState() {
@@ -34,7 +40,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -62,32 +68,128 @@ class _BookReaderPageState extends State<BookReaderPage> {
         _isLoadingMore = true;
       });
 
-      final nextChunkIndex = _currentChunkIndex + 1;
+      final nextChunkIndex = _currentPageIndex + 1;
       context
           .read<BookBlocOptimizedV2>()
           .add(LoadBookContentChunk(chunkIndex: nextChunkIndex));
 
       setState(() {
-        _currentChunkIndex = nextChunkIndex;
         _isLoadingMore = false;
       });
     }
   }
 
   void _saveProgress() {
-    final state = context.read<BookBlocOptimizedV2>().state;
-    if (state.bookContentChunks.isNotEmpty) {
+    if (_pages.isNotEmpty) {
       context.read<BookBlocOptimizedV2>().add(SaveReadingProgress(
             bookId: widget.bookId,
-            chunkIndex: _currentChunkIndex,
-            scrollOffset: _scrollOffset,
+            chunkIndex: _currentPageIndex,
+            scrollOffset: 0.0, // No scroll offset in page mode
           ));
+    }
+  }
+
+  Future<List<String>> _splitContentIntoPagesAsync(
+      String content, Size pageSize) async {
+    return await compute(
+        _splitContentIntoPages,
+        _SplitContentParams(
+          content: content,
+          fontSize: _fontSize,
+          lineHeight: _lineHeight,
+          pagePadding: _pagePadding,
+          pageSize: pageSize,
+        ));
+  }
+
+  static List<String> _splitContentIntoPages(_SplitContentParams params) {
+    final textStyle = TextStyle(
+      fontSize: params.fontSize,
+      height: params.lineHeight,
+    );
+
+    final availableWidth = params.pageSize.width -
+        (params.pagePadding.left + params.pagePadding.right);
+    final availableHeight = params.pageSize.height -
+        (params.pagePadding.top + params.pagePadding.bottom);
+
+    // Estimate characters per line based on average character width
+    final avgCharWidth = params.fontSize * 0.6; // Rough estimate
+    final charsPerLine = (availableWidth / avgCharWidth).round();
+
+    // Estimate lines per page
+    final lineHeight = params.fontSize * params.lineHeight;
+    final linesPerPage = (availableHeight / lineHeight).round();
+
+    // Estimate characters per page
+    final charsPerPage = charsPerLine * linesPerPage;
+
+    final pages = <String>[];
+    int currentIndex = 0;
+
+    while (currentIndex < params.content.length) {
+      final endIndex =
+          (currentIndex + charsPerPage).clamp(0, params.content.length);
+
+      // Find the last complete word within the estimated page size
+      String pageContent;
+      if (endIndex >= params.content.length) {
+        pageContent = params.content.substring(currentIndex);
+      } else {
+        // Find the last space before the estimated end
+        final lastSpaceIndex = params.content.lastIndexOf(' ', endIndex);
+        if (lastSpaceIndex > currentIndex) {
+          pageContent = params.content.substring(currentIndex, lastSpaceIndex);
+        } else {
+          // No space found, use the estimated size
+          pageContent = params.content.substring(currentIndex, endIndex);
+        }
+      }
+
+      if (pageContent.isNotEmpty) {
+        pages.add(pageContent.trim());
+      }
+
+      currentIndex = endIndex;
+
+      // Safety check to prevent infinite loops
+      if (currentIndex >= params.content.length) break;
+    }
+
+    return pages;
+  }
+
+  void _onPageChanged(int pageIndex) {
+    setState(() {
+      _currentPageIndex = pageIndex;
+    });
+    _saveProgress();
+  }
+
+  void _goToNextPage() {
+    if (_currentPageIndex < _pages.length - 1) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } else if (_isLoadingMore) {
+      _loadNextChunk();
+    }
+  }
+
+  void _goToPreviousPage() {
+    if (_currentPageIndex > 0) {
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
       appBar: AppBar(
@@ -118,7 +220,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              // TODO: Show reading settings
+              _showReadingSettings(context);
             },
           ),
         ],
@@ -131,9 +233,15 @@ class _BookReaderPageState extends State<BookReaderPage> {
           // Handle reading progress updates
           if (state.readingProgress != null) {
             setState(() {
-              _currentChunkIndex = state.readingProgress!.currentPosition;
-              _scrollOffset = state.readingProgress!.scrollOffset;
+              _currentPageIndex = state.readingProgress!.currentPosition;
             });
+          }
+
+          // Split content into pages when content is loaded
+          if (state.bookContentChunks.isNotEmpty &&
+              _pages.isEmpty &&
+              !_isProcessingContent) {
+            _processContent(state, screenSize);
           }
         },
         builder: (context, state) {
@@ -190,56 +298,60 @@ class _BookReaderPageState extends State<BookReaderPage> {
             return const ModernLoadingIndicator();
           }
 
+          // If processing content, show loading
+          if (_isProcessingContent) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const ModernLoadingIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Processing book content...',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // If pages are empty, show loading
+          if (_pages.isEmpty) {
+            return const ModernLoadingIndicator();
+          }
+
           return Column(
             children: [
               // Progress indicator
               LinearProgressIndicator(
-                value: state.readingProgress?.progress ?? 0.0,
+                value: _pages.isNotEmpty
+                    ? (_currentPageIndex + 1) / _pages.length
+                    : 0.0,
                 backgroundColor: theme.colorScheme.surfaceVariant,
                 valueColor:
                     AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
               ),
 
-              // Content area
+              // Page content area
               Expanded(
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Current chunk content
-                      if (_currentChunkIndex < state.bookContentChunks.length)
-                        Text(
-                          state.bookContentChunks[_currentChunkIndex],
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: _onPageChanged,
+                  itemCount: _pages.length,
+                  itemBuilder: (context, index) {
+                    return Container(
+                      padding: _pagePadding,
+                      child: SingleChildScrollView(
+                        child: Text(
+                          _pages[index],
                           style: theme.textTheme.bodyLarge?.copyWith(
-                            height: 1.6,
-                            fontSize: 16,
+                            height: _lineHeight,
+                            fontSize: _fontSize,
                           ),
                         ),
-
-                      // Load more button
-                      if (state.hasMoreContent &&
-                          _currentChunkIndex <
-                              state.bookContentChunks.length - 1)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: Center(
-                            child: ElevatedButton(
-                              onPressed: _isLoadingMore ? null : _loadNextChunk,
-                              child: _isLoadingMore
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 2),
-                                    )
-                                  : const Text('Load More'),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+                      ),
+                    );
+                  },
                 ),
               ),
 
@@ -258,28 +370,18 @@ class _BookReaderPageState extends State<BookReaderPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
-                      onPressed: _currentChunkIndex > 0
-                          ? () {
-                              setState(() {
-                                _currentChunkIndex--;
-                              });
-                              context.read<BookBlocOptimizedV2>().add(
-                                    LoadBookContentChunk(
-                                        chunkIndex: _currentChunkIndex),
-                                  );
-                            }
-                          : null,
+                      onPressed:
+                          _currentPageIndex > 0 ? _goToPreviousPage : null,
                       icon: const Icon(Icons.arrow_back),
                     ),
                     Text(
-                      '${_currentChunkIndex + 1} / ${state.bookContentChunks.length}',
+                      '${_currentPageIndex + 1} / ${_pages.length}',
                       style: theme.textTheme.bodyMedium,
                     ),
                     IconButton(
-                      onPressed: state.hasMoreContent
-                          ? () {
-                              _loadNextChunk();
-                            }
+                      onPressed: _currentPageIndex < _pages.length - 1 ||
+                              state.hasMoreContent
+                          ? _goToNextPage
                           : null,
                       icon: const Icon(Icons.arrow_forward),
                     ),
@@ -292,4 +394,132 @@ class _BookReaderPageState extends State<BookReaderPage> {
       ),
     );
   }
+
+  void _processContent(BookState state, Size screenSize) async {
+    setState(() {
+      _isProcessingContent = true;
+    });
+
+    try {
+      final content = state.bookContentChunks.join('\n\n');
+      final pages = await _splitContentIntoPagesAsync(content, screenSize);
+
+      if (mounted) {
+        setState(() {
+          _pages = pages;
+          _isProcessingContent = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isProcessingContent = false;
+        });
+        // Show error or fallback to simple splitting
+        final content = state.bookContentChunks.join('\n\n');
+        _pages = _simpleSplitContent(content, screenSize);
+        setState(() {});
+      }
+    }
+  }
+
+  List<String> _simpleSplitContent(String content, Size pageSize) {
+    // Fallback simple splitting method
+    const charsPerPage = 2000; // Rough estimate
+    final pages = <String>[];
+
+    for (int i = 0; i < content.length; i += charsPerPage) {
+      final end = (i + charsPerPage).clamp(0, content.length);
+      pages.add(content.substring(i, end));
+    }
+
+    return pages;
+  }
+
+  void _showReadingSettings(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Reading Settings',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Font Size',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Slider(
+              value: _fontSize,
+              min: 12.0,
+              max: 24.0,
+              divisions: 12,
+              label: _fontSize.round().toString(),
+              onChanged: (value) {
+                setState(() {
+                  _fontSize = value;
+                });
+                // Recalculate pages with new font size
+                final state = context.read<BookBlocOptimizedV2>().state;
+                if (state.bookContentChunks.isNotEmpty) {
+                  _processContent(state, MediaQuery.of(context).size);
+                }
+              },
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Line Height',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Slider(
+              value: _lineHeight,
+              min: 1.2,
+              max: 2.0,
+              divisions: 8,
+              label: _lineHeight.toStringAsFixed(1),
+              onChanged: (value) {
+                setState(() {
+                  _lineHeight = value;
+                });
+                // Recalculate pages with new line height
+                final state = context.read<BookBlocOptimizedV2>().state;
+                if (state.bookContentChunks.isNotEmpty) {
+                  _processContent(state, MediaQuery.of(context).size);
+                }
+              },
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Done'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SplitContentParams {
+  final String content;
+  final double fontSize;
+  final double lineHeight;
+  final EdgeInsets pagePadding;
+  final Size pageSize;
+
+  _SplitContentParams({
+    required this.content,
+    required this.fontSize,
+    required this.lineHeight,
+    required this.pagePadding,
+    required this.pageSize,
+  });
 }

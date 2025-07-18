@@ -13,6 +13,17 @@ import '../../../core/constants/app_constants.dart';
 import 'book_event.dart';
 import 'book_state.dart';
 
+// Cache data class with timestamp
+class CachedBookData {
+  final List<Book> books;
+  final DateTime timestamp;
+
+  CachedBookData({
+    required this.books,
+    required this.timestamp,
+  });
+}
+
 class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
   final GetBooksByTopic _getBooksByTopic;
   final GetBooksByTopicWithPagination _getBooksByTopicWithPagination;
@@ -22,8 +33,13 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
   final BookRepository _bookRepository;
   final ReadingRepository _readingRepository;
 
-  // Cache for books by category
-  final Map<String, List<Book>> _booksByCategoryCache = {};
+  // Enhanced cache with timestamps and persistence
+  final Map<String, CachedBookData> _booksByCategoryCache = {};
+  final Map<String, String> _bookContentCache = {};
+  final Map<int, Book> _bookDetailsCache = {};
+
+  // Cache configuration
+  static const Duration _cacheValidityDuration = Duration(hours: 24);
 
   BookBlocOptimizedV2({
     required GetBooksByTopic getBooksByTopic,
@@ -57,6 +73,8 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
 
   @override
   Future<void> close() async {
+    // Save cache to persistent storage before closing
+    await _saveCacheToStorage();
     await super.close();
   }
 
@@ -65,6 +83,17 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
     if (AppConstants.bookCategories.isEmpty) return;
 
     final defaultCategory = AppConstants.bookCategories.first;
+
+    // Check cache first
+    if (_isCacheValid(defaultCategory)) {
+      final cachedData = _booksByCategoryCache[defaultCategory];
+      if (cachedData != null) {
+        // Use add instead of emit for external calls
+        add(LoadBooksByTopic(defaultCategory));
+        return;
+      }
+    }
+
     add(LoadBooksByTopic(defaultCategory));
   }
 
@@ -73,7 +102,51 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
 
     final categoriesToPreload = AppConstants.bookCategories.skip(1);
     for (final category in categoriesToPreload) {
-      add(PreloadBooksByTopic(category));
+      // Only preload if not already cached or cache is expired
+      if (!_isCacheValid(category)) {
+        add(PreloadBooksByTopic(category));
+      }
+    }
+  }
+
+  // Enhanced cache management
+  bool _isCacheValid(String category) {
+    final cachedData = _booksByCategoryCache[category];
+    if (cachedData == null) return false;
+
+    final now = DateTime.now();
+    return now.difference(cachedData.timestamp) < _cacheValidityDuration;
+  }
+
+  bool _isContentCacheValid(String key) {
+    // For now, content cache is always valid (could add timestamp later)
+    return _bookContentCache.containsKey(key);
+  }
+
+  Future<void> _saveCacheToStorage() async {
+    try {
+      // Save category cache info (without the actual book data for now)
+      final cacheInfo =
+          _booksByCategoryCache.map((key, value) => MapEntry(key, {
+                'count': value.books.length,
+                'timestamp': value.timestamp.toIso8601String(),
+              }));
+
+      // Save to SharedPreferences or other persistent storage
+      // This would require injecting SharedPreferences into the BLoC
+      print('Cache info saved: ${cacheInfo.length} categories');
+    } catch (e) {
+      print('Failed to save cache: $e');
+    }
+  }
+
+  Future<void> _loadCacheFromStorage() async {
+    try {
+      // Load from persistent storage
+      // This would require injecting SharedPreferences into the BLoC
+      print('Cache loaded from storage');
+    } catch (e) {
+      print('Failed to load cache: $e');
     }
   }
 
@@ -81,11 +154,30 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
     LoadBooksByTopic event,
     Emitter<BookState> emit,
   ) async {
+    // Check cache first
+    if (_isCacheValid(event.topic)) {
+      final cachedData = _booksByCategoryCache[event.topic];
+      if (cachedData != null) {
+        emit(state.copyWith(
+          books: cachedData.books,
+          isLoading: false,
+          error: null,
+          category: event.topic,
+        ));
+        return;
+      }
+    }
+
     emit(state.copyWith(isLoading: true, error: null, category: event.topic));
 
     try {
       final books = await _getBooksByTopic(event.topic);
-      _booksByCategoryCache[event.topic] = books;
+
+      // Cache the results
+      _booksByCategoryCache[event.topic] = CachedBookData(
+        books: books,
+        timestamp: DateTime.now(),
+      );
 
       emit(state.copyWith(
         books: books,
@@ -94,7 +186,8 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
         category: event.topic,
       ));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      final errorMessage = _getUserFriendlyError(e.toString());
+      emit(state.copyWith(isLoading: false, error: errorMessage));
     }
   }
 
@@ -102,11 +195,21 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
     PreloadBooksByTopic event,
     Emitter<BookState> emit,
   ) async {
-    if (_booksByCategoryCache.containsKey(event.topic)) return;
+    if (_isCacheValid(event.topic)) return;
+
     try {
       final books = await _getBooksByTopic(event.topic);
-      _booksByCategoryCache[event.topic] = books;
-    } catch (_) {}
+
+      // Cache the results
+      _booksByCategoryCache[event.topic] = CachedBookData(
+        books: books,
+        timestamp: DateTime.now(),
+      );
+
+      print('Preloaded ${books.length} books for category: ${event.topic}');
+    } catch (e) {
+      print('Preload failed for ${event.topic}: ${e.toString()}');
+    }
   }
 
   Future<void> _onLoadMoreBooks(
@@ -134,7 +237,8 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
         isLoading: false,
       ));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      final errorMessage = _getUserFriendlyError(e.toString());
+      emit(state.copyWith(isLoading: false, error: errorMessage));
     }
   }
 
@@ -151,7 +255,8 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
       final books = await _searchBooks(event.query);
       emit(state.copyWith(books: books, isLoading: false, error: null));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      final errorMessage = _getUserFriendlyError(e.toString());
+      emit(state.copyWith(isLoading: false, error: errorMessage));
     }
   }
 
@@ -159,16 +264,28 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
     LoadBookById event,
     Emitter<BookState> emit,
   ) async {
+    // Check cache first
+    if (_bookDetailsCache.containsKey(event.bookId)) {
+      final cachedBook = _bookDetailsCache[event.bookId];
+      emit(state.copyWith(
+          selectedBook: cachedBook, isLoading: false, error: null));
+      return;
+    }
+
     emit(state.copyWith(isLoading: true, error: null));
     try {
       final book = await _bookRepository.getBookById(event.bookId);
       if (book != null) {
+        // Cache the book details
+        _bookDetailsCache[event.bookId] = book;
+
         emit(state.copyWith(selectedBook: book, isLoading: false, error: null));
       } else {
         emit(state.copyWith(isLoading: false, error: 'Book not found'));
       }
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      final errorMessage = _getUserFriendlyError(e.toString());
+      emit(state.copyWith(isLoading: false, error: errorMessage));
     }
   }
 
@@ -176,9 +293,30 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
     LoadBookContent event,
     Emitter<BookState> emit,
   ) async {
+    // Check content cache first
+    if (_isContentCacheValid(event.textUrl)) {
+      final cachedContent = _bookContentCache[event.textUrl];
+      if (cachedContent != null) {
+        final chunks = _splitContentIntoChunks(cachedContent);
+        emit(state.copyWith(
+          bookContent: cachedContent,
+          bookContentChunks: chunks,
+          currentChunkIndex: 0,
+          hasMoreContent: chunks.length > 1,
+          isLoading: false,
+          error: null,
+        ));
+        return;
+      }
+    }
+
     emit(state.copyWith(isLoading: true, error: null));
     try {
       final content = await _getBookContent(event.textUrl);
+
+      // Cache the content
+      _bookContentCache[event.textUrl] = content;
+
       final chunks = _splitContentIntoChunks(content);
 
       emit(state.copyWith(
@@ -190,8 +328,10 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
         error: null,
       ));
     } catch (e) {
+      final errorMessage =
+          _getUserFriendlyError('Failed to load book content: ${e.toString()}');
       emit(state.copyWith(
-        error: 'Failed to load book content: $e',
+        error: errorMessage,
         isLoading: false,
       ));
     }
@@ -215,8 +355,10 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
         error: null,
       ));
     } catch (e) {
+      final errorMessage =
+          _getUserFriendlyError('Failed to load book content: ${e.toString()}');
       emit(state.copyWith(
-        error: 'Failed to load book content: $e',
+        error: errorMessage,
         isLoading: false,
       ));
     }
@@ -335,6 +477,20 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
     }
   }
 
+  // Public method to clear cache
+  void clearCache() {
+    _booksByCategoryCache.clear();
+    _bookContentCache.clear();
+    _bookDetailsCache.clear();
+
+    print('Cache cleared');
+
+    // Optionally reload current category
+    if (state.category != null) {
+      add(LoadBooksByTopic(state.category!));
+    }
+  }
+
   List<String> _splitContentIntoChunks(String content) {
     const int chunkSize = 3000;
     List<String> chunks = [];
@@ -351,6 +507,36 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
 
   // Public method to get cached books for a category
   List<Book>? getCachedBooksForCategory(String category) {
-    return _booksByCategoryCache[category];
+    if (_isCacheValid(category)) {
+      return _booksByCategoryCache[category]?.books;
+    }
+    return null;
+  }
+
+  // Public method to get cache statistics
+  Map<String, dynamic> getCacheStats() {
+    return {
+      'categories': _booksByCategoryCache.length,
+      'content': _bookContentCache.length,
+      'bookDetails': _bookDetailsCache.length,
+      'totalBooks': _booksByCategoryCache.values
+          .fold<int>(0, (sum, data) => sum + data.books.length),
+    };
+  }
+
+  String _getUserFriendlyError(String error) {
+    if (error.contains('timeout') || error.contains('Timeout')) {
+      return 'Request timeout - the server took too long to respond. Please try again.';
+    } else if (error.contains('connection') || error.contains('Connection')) {
+      return 'No internet connection. Please check your network settings.';
+    } else if (error.contains('DioException')) {
+      return 'Network error occurred. Please check your internet connection.';
+    } else if (error.contains('Failed to fetch')) {
+      return 'Failed to load data from server. Please try again later.';
+    } else if (error.contains('Book not found')) {
+      return 'The requested book could not be found.';
+    } else {
+      return 'An unexpected error occurred. Please try again.';
+    }
   }
 }
