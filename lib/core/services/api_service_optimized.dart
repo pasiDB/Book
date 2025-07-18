@@ -58,6 +58,26 @@ class ApiServiceOptimized {
     );
   }
 
+  String _generateCacheKey(String path, Map<String, dynamic>? queryParameters) {
+    final buffer = StringBuffer(path);
+    if (queryParameters != null && queryParameters.isNotEmpty) {
+      final sortedParams = Map.fromEntries(
+        queryParameters.entries.toList()
+          ..sort((a, b) => a.key.compareTo(b.key)),
+      );
+      buffer.write(jsonEncode(sortedParams));
+    }
+    return buffer.toString();
+  }
+
+  bool _isCacheValid(String cacheKey, Duration? customExpiry) {
+    final timestamp = _cacheTimestamps[cacheKey];
+    if (timestamp == null) return false;
+
+    final expiry = customExpiry ?? _cacheExpiry;
+    return DateTime.now().difference(timestamp) < expiry;
+  }
+
   Future<T> get<T>(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -156,22 +176,6 @@ class ApiServiceOptimized {
     }
 
     throw ApiException('Max retries exceeded for: $path');
-  }
-
-  String _generateCacheKey(String path, Map<String, dynamic>? queryParameters) {
-    final queryString =
-        queryParameters != null ? json.encode(queryParameters) : '';
-    return '$path$queryString';
-  }
-
-  bool _isCacheValid(String cacheKey, Duration? cacheExpiry) {
-    if (!_cache.containsKey(cacheKey)) return false;
-
-    final timestamp = _cacheTimestamps[cacheKey];
-    if (timestamp == null) return false;
-
-    final expiry = cacheExpiry ?? _cacheExpiry;
-    return DateTime.now().difference(timestamp) < expiry;
   }
 
   void clearCache([String? path]) {

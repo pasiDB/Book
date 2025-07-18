@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../bloc/book/book_bloc.dart';
+import 'package:go_router/go_router.dart';
+import '../bloc/book/book_bloc_optimized_v2.dart';
 import '../bloc/book/book_event.dart';
 import '../bloc/book/book_state.dart';
 import '../widgets/book_card.dart';
-
 import '../widgets/modern_loading_indicator.dart';
 
 class SearchPage extends StatefulWidget {
@@ -16,33 +16,41 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _searchFocusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  void _performSearch(String query) {
-    if (query.trim().isNotEmpty) {
-      final bloc = context.read<BookBloc>();
-      final state = bloc.state;
-      // Only search if not already loaded for this query
-      if (state.books.isEmpty) {
-        bloc.add(SearchBooksEvent(query));
-      }
+  void _onSearchChanged() {
+    final query = _searchController.text.trim();
+    if (query.isNotEmpty) {
+      final bloc = context.read<BookBlocOptimizedV2>();
+      bloc.add(SearchBooksEvent(query));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isLargeScreen = MediaQuery.of(context).size.width > 600;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Search Books'),
-        elevation: 0,
-        automaticallyImplyLeading: true,
+        title: const Text('Search'),
+        elevation: 1,
+        centerTitle: true,
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        titleTextStyle: theme.appBarTheme.titleTextStyle,
       ),
       body: Column(
         children: [
@@ -51,81 +59,143 @@ class _SearchPageState extends State<SearchPage> {
             padding: const EdgeInsets.all(16),
             child: TextField(
               controller: _searchController,
-              focusNode: _searchFocusNode,
               decoration: InputDecoration(
-                hintText: 'Search for books, authors, or subjects...',
+                hintText: 'Search for books...',
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _searchFocusNode.unfocus();
-                        },
-                      )
-                    : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
+                filled: true,
+                fillColor: theme.colorScheme.surfaceVariant,
               ),
-              onSubmitted: _performSearch,
-              onChanged: (value) {
-                // Debounced search could be implemented here
-                if (value.trim().isEmpty) {
-                  setState(() {});
-                }
-              },
             ),
           ),
-
           // Search Results
           Expanded(
-            child: BlocBuilder<BookBloc, BookState>(
+            child: BlocBuilder<BookBlocOptimizedV2, BookState>(
               builder: (context, state) {
-                if (state.isLoading) {
-                  return const ModernLoadingIndicator();
-                } else if (state.error != null) {
-                  return Center(child: Text('Error:  {state.error}'));
-                } else if (state.books.isEmpty) {
-                  return const Center(
+                if (_searchController.text.trim().isEmpty) {
+                  return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.search_off,
+                          Icons.search,
                           size: 64,
-                          color: Colors.grey,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         Text(
-                          'No books found',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          'Search for your favorite books',
+                          style: theme.textTheme.titleMedium,
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
-                          'Try searching for different keywords',
-                          style: TextStyle(
-                            color: Colors.grey,
+                          'Enter a title, author, or subject',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
                     ),
                   );
                 }
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: state.books.length,
-                  itemBuilder: (context, index) {
-                    final book = state.books[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: BookCard(book: book),
-                    );
-                  },
-                );
+
+                if (state.isLoading) {
+                  return const ModernLoadingIndicator();
+                }
+
+                if (state.error != null) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: theme.colorScheme.error,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Search failed',
+                          style: theme.textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          state.error!,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                if (state.books.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off,
+                          size: 64,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No books found',
+                          style: theme.textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Try a different search term',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return isLargeScreen
+                    ? GridView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
+                          childAspectRatio: 0.65,
+                        ),
+                        itemCount: state.books.length,
+                        itemBuilder: (context, index) {
+                          final book = state.books[index];
+                          return BookCard(
+                            book: book,
+                            onTap: () {
+                              context.go('/book/${book.id}');
+                            },
+                          );
+                        },
+                      )
+                    : ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: state.books.length,
+                        itemBuilder: (context, index) {
+                          final book = state.books[index];
+                          return BookCard(
+                            book: book,
+                            onTap: () {
+                              context.go('/book/${book.id}');
+                            },
+                          );
+                        },
+                      );
               },
             ),
           ),

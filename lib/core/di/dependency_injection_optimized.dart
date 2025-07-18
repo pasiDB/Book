@@ -91,6 +91,7 @@ class DependencyInjectionOptimized {
       getBookContent: GetBookContent(_bookRepository),
       getBookContentByGutenbergId: GetBookContentByGutenbergId(_bookRepository),
       bookRepository: _bookRepository,
+      readingRepository: _readingRepository,
     );
   }
 

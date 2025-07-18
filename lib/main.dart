@@ -10,12 +10,14 @@ import 'core/theme/app_theme.dart';
 import 'data/datasources/book_remote_data_source.dart';
 import 'data/datasources/book_local_data_source.dart';
 import 'data/repositories/book_repository_impl.dart';
+import 'data/repositories/reading_repository_impl.dart';
 import 'domain/repositories/book_repository.dart';
+import 'domain/repositories/reading_repository.dart';
 import 'domain/usecases/get_books_by_topic.dart';
 import 'domain/usecases/search_books.dart';
 import 'domain/usecases/get_book_content.dart';
 import 'domain/usecases/get_book_content_by_gutenberg_id.dart';
-import 'presentation/bloc/book/book_bloc.dart';
+import 'presentation/bloc/book/book_bloc_optimized_v2.dart';
 import 'presentation/pages/home_page.dart';
 import 'presentation/pages/search_page.dart';
 import 'presentation/pages/library_page.dart';
@@ -60,6 +62,9 @@ class MyApp extends StatelessWidget {
       localDataSource: bookLocalDataSource,
     );
 
+    final ReadingRepository readingRepository =
+        ReadingRepositoryImpl(sharedPreferences);
+
     // Initialize use cases
     final getBooksByTopic = GetBooksByTopic(bookRepository);
     final getBooksByTopicWithPagination =
@@ -70,18 +75,19 @@ class MyApp extends StatelessWidget {
         GetBookContentByGutenbergId(bookRepository);
 
     // Initialize BLoCs
-    final bookBloc = BookBloc(
+    final bookBloc = BookBlocOptimizedV2(
       getBooksByTopic: getBooksByTopic,
       getBooksByTopicWithPagination: getBooksByTopicWithPagination,
       searchBooks: searchBooks,
       getBookContent: getBookContent,
       getBookContentByGutenbergId: getBookContentByGutenbergId,
       bookRepository: bookRepository,
+      readingRepository: readingRepository,
     );
 
     return MultiBlocProvider(
       providers: [
-        BlocProvider<BookBloc>.value(value: bookBloc),
+        BlocProvider<BookBlocOptimizedV2>.value(value: bookBloc),
       ],
       child: MaterialApp(
         title: 'Book Reader',
@@ -96,7 +102,7 @@ class MyApp extends StatelessWidget {
 }
 
 class SplashScreen extends StatefulWidget {
-  final BookBloc bookBloc;
+  final BookBlocOptimizedV2 bookBloc;
   const SplashScreen({super.key, required this.bookBloc});
 
   @override
@@ -130,7 +136,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     if (_loadingDone) {
       // Use router-based navigation after splash
-      return const _MainAppRouter();
+      return _MainAppRouter(bookBloc: widget.bookBloc);
     }
     final theme = Theme.of(context);
     return Scaffold(
@@ -169,7 +175,10 @@ class _SplashScreenState extends State<SplashScreen> {
 }
 
 class _MainAppRouter extends StatelessWidget {
-  const _MainAppRouter();
+  final BookBlocOptimizedV2 bookBloc;
+
+  const _MainAppRouter({required this.bookBloc});
+
   @override
   Widget build(BuildContext context) {
     // Rebuild the router-based app after splash
@@ -219,13 +228,18 @@ class _MainAppRouter extends StatelessWidget {
         ),
       ],
     );
-    return MaterialApp.router(
-      title: 'Book Reader',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
-      routerConfig: router,
-      debugShowCheckedModeBanner: false,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<BookBlocOptimizedV2>.value(value: bookBloc),
+      ],
+      child: MaterialApp.router(
+        title: 'Book Reader',
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.system,
+        routerConfig: router,
+        debugShowCheckedModeBanner: false,
+      ),
     );
   }
 }

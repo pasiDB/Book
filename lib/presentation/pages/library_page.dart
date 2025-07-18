@@ -1,139 +1,133 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../bloc/book/book_bloc.dart';
-import '../bloc/book/book_state.dart';
+import '../bloc/book/book_bloc_optimized_v2.dart';
 import '../bloc/book/book_event.dart';
+import '../bloc/book/book_state.dart';
+import '../widgets/book_card.dart';
+import '../widgets/modern_loading_indicator.dart';
 
-class LibraryPage extends StatelessWidget {
+class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});
+
+  @override
+  State<LibraryPage> createState() => _LibraryPageState();
+}
+
+class _LibraryPageState extends State<LibraryPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Load currently reading books when the page is initialized
+    context.read<BookBlocOptimizedV2>().add(const LoadCurrentlyReadingBooks());
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Library'),
-        elevation: 0,
-        automaticallyImplyLeading: true,
+        elevation: 1,
+        centerTitle: true,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        titleTextStyle: Theme.of(context).appBarTheme.titleTextStyle,
       ),
-      body: DefaultTabController(
-        length: 2,
-        child: Column(
-          children: [
-            const TabBar(
-              tabs: [
-                Tab(text: 'Currently Reading'),
-                Tab(text: 'Downloaded Books'),
-              ],
-            ),
-            const Expanded(
-              child: TabBarView(
+      body: BlocBuilder<BookBlocOptimizedV2, BookState>(
+        builder: (context, state) {
+          if (state.isLoading) {
+            return const ModernLoadingIndicator();
+          }
+
+          if (state.error != null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CurrentlyReadingTab(),
-                  DownloadedBooksTab(),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error loading library',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    state.error!,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      context
+                          .read<BookBlocOptimizedV2>()
+                          .add(const LoadCurrentlyReadingBooks());
+                    },
+                    child: const Text('Retry'),
+                  ),
                 ],
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+            );
+          }
 
-class CurrentlyReadingTab extends StatelessWidget {
-  const CurrentlyReadingTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    context.read<BookBloc>().add(const LoadCurrentlyReadingBooks());
-    return BlocBuilder<BookBloc, BookState>(
-      builder: (context, state) {
-        final books = state.currentlyReadingBooks;
-        if (books.isEmpty) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.bookmark,
-                  size: 64,
-                  color: Colors.grey,
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'No books in progress',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
+          if (state.currentlyReadingBooks.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.library_books_outlined,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Start reading a book to see it here',
-                  style: TextStyle(
-                    color: Colors.grey,
+                  const SizedBox(height: 16),
+                  Text(
+                    'Your library is empty',
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
-                ),
-              ],
-            ),
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: books.length,
-          itemBuilder: (context, index) {
-            final book = books[index];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 16),
-              child: ListTile(
-                leading: book.coverImageUrl != null
-                    ? Image.network(book.coverImageUrl!,
-                        width: 48, height: 72, fit: BoxFit.cover)
-                    : const Icon(Icons.book, size: 48),
-                title: Text(book.title,
-                    maxLines: 2, overflow: TextOverflow.ellipsis),
-                subtitle: Text(book.authorNames),
-                onTap: () => context.push('/reader/${book.id}'),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Add books to your library to see them here',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    onPressed: () => context.go('/'),
+                    icon: const Icon(Icons.explore),
+                    label: const Text('Explore Books'),
+                  ),
+                ],
               ),
             );
-          },
-        );
-      },
-    );
-  }
-}
+          }
 
-class DownloadedBooksTab extends StatelessWidget {
-  const DownloadedBooksTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.download_done,
-            size: 64,
-            color: Colors.grey,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'No downloaded books',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Download books for offline reading',
-            style: TextStyle(
-              color: Colors.grey,
-            ),
-          ),
-        ],
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: state.currentlyReadingBooks.length,
+            itemBuilder: (context, index) {
+              final book = state.currentlyReadingBooks[index];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: BookCard(
+                  book: book,
+                  onTap: () {
+                    context.go('/book/${book.id}');
+                  },
+                  isInLibrary: true,
+                  showProgress: true,
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

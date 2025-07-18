@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/constants/app_constants.dart';
-import '../bloc/book/book_bloc.dart';
+import '../bloc/book/book_bloc_optimized_v2.dart';
 import '../bloc/book/book_event.dart';
 import '../bloc/book/book_state.dart';
 import '../widgets/book_card.dart';
-
 import '../widgets/modern_loading_indicator.dart';
 
 class HomePage extends StatefulWidget {
@@ -22,7 +22,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    final bloc = context.read<BookBloc>();
+    final bloc = context.read<BookBlocOptimizedV2>();
     final state = bloc.state;
     // Only set selectedCategory if not already set
     if (selectedCategory == null && AppConstants.bookCategories.isNotEmpty) {
@@ -59,7 +59,7 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    final bloc = context.read<BookBloc>();
+    final bloc = context.read<BookBlocOptimizedV2>();
     final cachedBooks = bloc.getCachedBooksForCategory(category);
     if (cachedBooks != null && cachedBooks.isNotEmpty) {
       bloc.emit(bloc.state.copyWith(
@@ -141,7 +141,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           Expanded(
-            child: BlocBuilder<BookBloc, BookState>(
+            child: BlocBuilder<BookBlocOptimizedV2, BookState>(
               builder: (context, state) {
                 if (state.isLoading) {
                   return const ModernLoadingIndicator();
@@ -171,7 +171,7 @@ class _HomePageState extends State<HomePage> {
                         const SizedBox(height: 24),
                         ElevatedButton(
                           onPressed: () {
-                            final bloc = context.read<BookBloc>();
+                            final bloc = context.read<BookBlocOptimizedV2>();
                             bloc.add(LoadBooksByTopic(selectedCategory!));
                           },
                           child: const Text('Retry'),
@@ -194,7 +194,12 @@ class _HomePageState extends State<HomePage> {
                           itemCount: state.books.length,
                           itemBuilder: (context, index) {
                             final book = state.books[index];
-                            return BookCard(book: book);
+                            return BookCard(
+                              book: book,
+                              onTap: () {
+                                context.go('/book/${book.id}');
+                              },
+                            );
                           },
                         )
                       : ListView.builder(
@@ -203,7 +208,12 @@ class _HomePageState extends State<HomePage> {
                           itemCount: state.books.length,
                           itemBuilder: (context, index) {
                             final book = state.books[index];
-                            return BookCard(book: book);
+                            return BookCard(
+                              book: book,
+                              onTap: () {
+                                context.go('/book/${book.id}');
+                              },
+                            );
                           },
                         );
                 }

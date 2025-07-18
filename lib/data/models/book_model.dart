@@ -4,73 +4,80 @@ class BookModel extends Book {
   const BookModel({
     required super.id,
     required super.title,
-    required super.authors,
-    required super.subjects,
-    required super.bookshelves,
-    required super.languages,
-    super.downloadCount,
-    required super.formats,
-    super.coverImageUrl,
+    super.author,
+    super.coverUrl,
+    super.description,
+    super.languages = const [],
+    super.subjects = const [],
+    super.readingProgress,
+    super.isDownloaded = false,
+    super.downloadPath,
+    super.lastReadAt,
+    super.formats = const {},
   });
 
   factory BookModel.fromJson(Map<String, dynamic> json) {
-    int parseId(dynamic value) {
-      if (value == null) return 0;
-      if (value is int) return value;
-      if (value is String) {
-        // Remove any non-numeric characters and try parsing
-        final cleanedValue = value.replaceAll(RegExp(r'[^0-9]'), '');
-        return cleanedValue.isEmpty ? 0 : int.parse(cleanedValue);
-      }
-      return 0;
-    }
-
     try {
+      // Parse ID
+      final id = json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id']?.toString() ?? '') ?? 0;
+
+      // Parse title
+      final title = json['title']?.toString() ?? 'Unknown Title';
+
+      // Parse author (take first author if available)
+      String? author;
+      if (json['authors'] is List && (json['authors'] as List).isNotEmpty) {
+        final firstAuthor = json['authors'][0];
+        if (firstAuthor is Map) {
+          author = firstAuthor['name']?.toString();
+        } else {
+          author = firstAuthor?.toString();
+        }
+      }
+
+      // Parse languages
+      final languages = (json['languages'] as List<dynamic>?)
+              ?.map((lang) => lang?.toString() ?? '')
+              .where((lang) => lang.isNotEmpty)
+              .toList() ??
+          [];
+
+      // Parse subjects
+      final subjects = (json['subjects'] as List<dynamic>?)
+              ?.map((subject) => subject?.toString() ?? '')
+              .where((subject) => subject.isNotEmpty)
+              .toList() ??
+          [];
+
+      // Parse formats
+      final formats = (json['formats'] as Map<String, dynamic>?)?.map(
+            (key, value) => MapEntry(key, value?.toString() ?? ''),
+          ) ??
+          {};
+
+      // Get cover URL from formats
+      String? coverUrl;
+      if (formats.containsKey('image/jpeg')) {
+        coverUrl = formats['image/jpeg'];
+      }
+
       return BookModel(
-        id: parseId(json['id']),
-        title: json['title'] as String? ?? 'Unknown Title',
-        authors: (json['authors'] as List<dynamic>?)
-                ?.map((author) {
-                  if (author is Map && author.containsKey('name')) {
-                    return author['name'] as String;
-                  } else if (author is String) {
-                    return author;
-                  } else {
-                    return '';
-                  }
-                })
-                .where((name) => name.isNotEmpty)
-                .toList() ??
-            [],
-        subjects: (json['subjects'] as List<dynamic>?)
-                ?.map((subject) => subject as String)
-                .toList() ??
-            [],
-        bookshelves: (json['bookshelves'] as List<dynamic>?)
-                ?.map((bookshelf) => bookshelf as String)
-                .toList() ??
-            [],
-        languages: (json['languages'] as List<dynamic>?)
-                ?.map((language) => language as String)
-                .toList() ??
-            [],
-        downloadCount: json['download_count']?.toString(),
-        formats: Map<String, String>.from(json['formats'] as Map),
-        coverImageUrl: json['formats']?['image/jpeg'] as String?,
+        id: id,
+        title: title,
+        author: author,
+        coverUrl: coverUrl,
+        languages: languages,
+        subjects: subjects,
+        formats: formats,
       );
     } catch (e) {
-      // Log the error for debugging purposes
-      print('Error parsing BookModel from JSON: $e');
-      return BookModel(
+      print('Error parsing book model: $e');
+      // Return a default book model with minimal data
+      return const BookModel(
         id: 0,
-        title: 'Unknown Title',
-        authors: [],
-        subjects: [],
-        bookshelves: [],
-        languages: [],
-        downloadCount: '0',
-        formats: {},
-        coverImageUrl: null,
+        title: 'Error Loading Book',
       );
     }
   }
@@ -79,13 +86,16 @@ class BookModel extends Book {
     return {
       'id': id,
       'title': title,
-      'authors': authors,
-      'subjects': subjects,
-      'bookshelves': bookshelves,
+      'author': author,
+      'cover_url': coverUrl,
+      'description': description,
       'languages': languages,
-      'download_count': downloadCount,
+      'subjects': subjects,
+      'reading_progress': readingProgress,
+      'is_downloaded': isDownloaded,
+      'download_path': downloadPath,
+      'last_read_at': lastReadAt?.toIso8601String(),
       'formats': formats,
-      'cover_image_url': coverImageUrl,
     };
   }
 }

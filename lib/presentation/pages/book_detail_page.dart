@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../bloc/book/book_bloc.dart';
+import '../bloc/book/book_bloc_optimized_v2.dart';
 import '../bloc/book/book_event.dart';
 import '../bloc/book/book_state.dart';
 import '../../domain/entities/book.dart';
@@ -22,22 +22,37 @@ class _BookDetailPageState extends State<BookDetailPage> {
   @override
   void initState() {
     super.initState();
-    context.read<BookBloc>().add(LoadBookById(widget.bookId));
+    context.read<BookBlocOptimizedV2>().add(LoadBookById(widget.bookId));
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFFE91E63)), // Pink
-          onPressed: () => Navigator.of(context).maybePop(),
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.primary),
+          onPressed: () {
+            print('Back button pressed');
+            print('Can pop: ${Navigator.of(context).canPop()}');
+            print('Route: ${ModalRoute.of(context)?.settings.name}');
+
+            // Try multiple navigation methods
+            if (Navigator.of(context).canPop()) {
+              print('Using Navigator.pop()');
+              Navigator.of(context).pop();
+            } else {
+              print('Using context.go() to home');
+              context.go('/');
+            }
+          },
         ),
         title: const Text('Book Details'),
         elevation: 0,
-        automaticallyImplyLeading: false,
+        backgroundColor: theme.colorScheme.surface,
+        foregroundColor: theme.colorScheme.onSurface,
       ),
-      body: BlocListener<BookBloc, BookState>(
+      body: BlocListener<BookBlocOptimizedV2, BookState>(
         listenWhen: (previous, current) {
           // Listen for changes in currentlyReadingBooks
           return previous.currentlyReadingBooks.length !=
@@ -52,12 +67,16 @@ class _BookDetailPageState extends State<BookDetailPage> {
                 _addedToLibrary = true;
               });
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Book added to Library!')),
+                SnackBar(
+                  content: const Text('Book added to Library!'),
+                  backgroundColor: theme.colorScheme.primary,
+                  behavior: SnackBarBehavior.floating,
+                ),
               );
             }
           }
         },
-        child: BlocBuilder<BookBloc, BookState>(
+        child: BlocBuilder<BookBlocOptimizedV2, BookState>(
           builder: (context, state) {
             if (state.isLoading) {
               return const ModernLoadingIndicator();
@@ -70,22 +89,22 @@ class _BookDetailPageState extends State<BookDetailPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.error_outline,
                       size: 64,
-                      color: Colors.red,
+                      color: theme.colorScheme.error,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'Error: ${state.error}',
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: theme.textTheme.titleMedium,
                     ),
                     const SizedBox(height: 16),
-                    ElevatedButton(
+                    FilledButton(
                       onPressed: () {
                         context
-                            .read<BookBloc>()
+                            .read<BookBlocOptimizedV2>()
                             .add(LoadBookById(widget.bookId));
                       },
                       child: const Text('Retry'),
@@ -94,7 +113,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                 ),
               );
             }
-            return const Center(child: Text('Loading...'));
+            return const ModernLoadingIndicator();
           },
         ),
       ),
@@ -104,8 +123,13 @@ class _BookDetailPageState extends State<BookDetailPage> {
   Widget _buildBookDetails(Book book, bool alreadyInLibrary) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final chipBg = isDark ? Colors.grey[800] : Colors.grey[200];
-    final chipText = isDark ? Colors.white : Colors.black87;
+    final chipBg = isDark
+        ? theme.colorScheme.surfaceVariant
+        : theme.colorScheme.surfaceVariant;
+    final chipText = isDark
+        ? theme.colorScheme.onSurfaceVariant
+        : theme.colorScheme.onSurfaceVariant;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -116,33 +140,36 @@ class _BookDetailPageState extends State<BookDetailPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Book Cover
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  width: 120,
-                  height: 180,
-                  child: book.coverImageUrl != null
-                      ? Image.network(
-                          book.coverImageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
-                            color: Colors.grey[300],
-                            child: const Icon(
+              Hero(
+                tag: 'book_cover_${book.id}',
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 120,
+                    height: 180,
+                    child: book.coverUrl != null
+                        ? Image.network(
+                            book.coverUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                              color: theme.colorScheme.surfaceVariant,
+                              child: Icon(
+                                Icons.book,
+                                size: 60,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          )
+                        : Container(
+                            color: theme.colorScheme.surfaceVariant,
+                            child: Icon(
                               Icons.book,
                               size: 60,
-                              color: Colors.grey,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
-                        )
-                      : Container(
-                          color: Colors.grey[300],
-                          child: const Icon(
-                            Icons.book,
-                            size: 60,
-                            color: Colors.grey,
-                          ),
-                        ),
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -164,11 +191,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
                     Text(
                       'by ${book.authorNames}',
                       style: theme.textTheme.titleMedium?.copyWith(
-                        color: theme.colorScheme.onSurface,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Removed Available Formats section
                   ],
                 ),
               ),
@@ -181,32 +207,34 @@ class _BookDetailPageState extends State<BookDetailPage> {
           Row(
             children: [
               Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: book.hasReadableFormat
+                child: FilledButton.icon(
+                  onPressed: book.hasTextFormat || book.hasHtmlFormat
                       ? () => context.push('/reader/${book.id}')
                       : null,
                   icon: const Icon(Icons.menu_book),
                   label: const Text('Read Now'),
-                  style: ElevatedButton.styleFrom(
+                  style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: ElevatedButton.icon(
+                child: FilledButton.icon(
                   onPressed: alreadyInLibrary
                       ? null
                       : () {
-                          context.read<BookBloc>().add(AddBookToLibrary(book));
+                          context
+                              .read<BookBlocOptimizedV2>()
+                              .add(AddBookToLibrary(book));
                         },
                   icon: const Icon(Icons.library_add),
                   label:
                       Text(alreadyInLibrary ? 'In Library' : 'Add to Library'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    foregroundColor: Colors.white,
+                  style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: theme.colorScheme.secondary,
+                    foregroundColor: theme.colorScheme.onSecondary,
                   ),
                 ),
               ),
@@ -231,6 +259,9 @@ class _BookDetailPageState extends State<BookDetailPage> {
                 return Chip(
                   label: Text(subject, style: TextStyle(color: chipText)),
                   backgroundColor: chipBg,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 );
               }).toList(),
             ),
@@ -251,16 +282,20 @@ class _BookDetailPageState extends State<BookDetailPage> {
               runSpacing: 8,
               children: book.languages.map((language) {
                 return Chip(
-                  label: Text(language, style: TextStyle(color: chipText)),
+                  label: Text(language.toUpperCase(),
+                      style: TextStyle(color: chipText)),
                   backgroundColor: chipBg,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 );
               }).toList(),
             ),
-            const SizedBox(height: 24),
           ],
 
           // Bookshelves
           if (book.bookshelves.isNotEmpty) ...[
+            const SizedBox(height: 24),
             Text(
               'Bookshelves:',
               style: theme.textTheme.titleSmall?.copyWith(
@@ -271,10 +306,13 @@ class _BookDetailPageState extends State<BookDetailPage> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: book.bookshelves.take(3).map((bookshelf) {
+              children: book.bookshelves.map((shelf) {
                 return Chip(
-                  label: Text(bookshelf, style: TextStyle(color: chipText)),
+                  label: Text(shelf, style: TextStyle(color: chipText)),
                   backgroundColor: chipBg,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 );
               }).toList(),
             ),

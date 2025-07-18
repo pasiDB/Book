@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../constants/app_constants.dart';
 import '../services/api_service.dart';
 import '../services/cache_service.dart';
 import '../../data/datasources/book_remote_data_source.dart';
@@ -8,11 +10,10 @@ import '../../data/repositories/book_repository_impl.dart';
 import '../../domain/repositories/book_repository.dart';
 import '../../domain/repositories/reading_repository.dart';
 import '../../domain/usecases/get_books_by_topic.dart';
-import '../../domain/usecases/search_books.dart';
 import '../../domain/usecases/get_book_content.dart';
 import '../../domain/usecases/get_book_content_by_gutenberg_id.dart';
+import '../../domain/usecases/search_books.dart';
 import '../../presentation/bloc/book/book_bloc_optimized.dart';
-import '../constants/app_constants.dart';
 
 class DependencyInjection {
   static late final Dio _dio;
@@ -25,7 +26,20 @@ class DependencyInjection {
   static late final ReadingRepository _readingRepository;
   static late final BookBlocOptimized _bookBloc;
 
+  // Expose dependencies for access
+  static Dio get dio => _dio;
+  static SharedPreferences get sharedPreferences => _sharedPreferences;
+  static ApiService get apiService => _apiService;
+  static CacheService get cacheService => _cacheService;
+  static BookRemoteDataSource get remoteDataSource => _remoteDataSource;
+  static BookLocalDataSource get localDataSource => _localDataSource;
+  static BookRepository get bookRepository => _bookRepository;
+  static ReadingRepository get readingRepository => _readingRepository;
+  static BookBlocOptimized get bookBloc => _bookBloc;
+
   static Future<void> initialize() async {
+    print('🚀 Initializing dependency injection...');
+
     // Initialize core dependencies
     await _initializeCore();
 
@@ -40,6 +54,8 @@ class DependencyInjection {
 
     // Initialize BLoCs
     _initializeBlocs();
+
+    print('✅ Dependency injection initialized successfully');
   }
 
   static Future<void> _initializeCore() async {
@@ -72,36 +88,32 @@ class DependencyInjection {
   }
 
   static void _initializeUseCases() {
-    // Use cases will be created when needed
-  }
+    // Initialize use cases for BLoC initialization
+    final getBooksByTopic = GetBooksByTopic(_bookRepository);
+    final getBooksByTopicWithPagination =
+        GetBooksByTopicWithPagination(_bookRepository);
+    final searchBooks = SearchBooks(_bookRepository);
+    final getBookContent = GetBookContent(_bookRepository);
+    final getBookContentByGutenbergId =
+        GetBookContentByGutenbergId(_bookRepository);
 
-  static void _initializeBlocs() {
+    // Initialize BLoC with use cases
     _bookBloc = BookBlocOptimized(
-      getBooksByTopic: GetBooksByTopic(_bookRepository),
-      getBooksByTopicWithPagination:
-          GetBooksByTopicWithPagination(_bookRepository),
-      searchBooks: SearchBooks(_bookRepository),
-      getBookContent: GetBookContent(_bookRepository),
-      getBookContentByGutenbergId: GetBookContentByGutenbergId(_bookRepository),
+      getBooksByTopic: getBooksByTopic,
+      getBooksByTopicWithPagination: getBooksByTopicWithPagination,
+      searchBooks: searchBooks,
+      getBookContent: getBookContent,
+      getBookContentByGutenbergId: getBookContentByGutenbergId,
       bookRepository: _bookRepository,
     );
   }
 
-  // Getters for dependencies
-  static Dio get dio => _dio;
-  static SharedPreferences get sharedPreferences => _sharedPreferences;
-  static BookRemoteDataSource get remoteDataSource => _remoteDataSource;
-  static BookLocalDataSource get localDataSource => _localDataSource;
-  static BookRepository get bookRepository => _bookRepository;
-  static ReadingRepository get readingRepository => _readingRepository;
-  static BookBlocOptimized get bookBloc => _bookBloc;
+  static void _initializeBlocs() {
+    // BLoC is already initialized in _initializeUseCases
+  }
 
-  // Factory methods for use cases
-  static GetBooksByTopic getBooksByTopic() => GetBooksByTopic(_bookRepository);
-  static GetBooksByTopicWithPagination getBooksByTopicWithPagination() =>
-      GetBooksByTopicWithPagination(_bookRepository);
-  static SearchBooks searchBooks() => SearchBooks(_bookRepository);
-  static GetBookContent getBookContent() => GetBookContent(_bookRepository);
-  static GetBookContentByGutenbergId getBookContentByGutenbergId() =>
-      GetBookContentByGutenbergId(_bookRepository);
+  static void dispose() {
+    _dio.close();
+    _bookBloc.close();
+  }
 }
