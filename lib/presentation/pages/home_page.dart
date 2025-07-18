@@ -94,7 +94,7 @@ class _HomePageState extends State<HomePage> {
     final isLargeScreen = MediaQuery.of(context).size.width > 600;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Book Reader'),
+        title: const Text('The Shelf'),
         elevation: 1,
         centerTitle: true,
         backgroundColor: theme.appBarTheme.backgroundColor,
