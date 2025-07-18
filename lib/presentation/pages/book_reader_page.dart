@@ -32,9 +32,13 @@ class _BookReaderPageState extends State<BookReaderPage> {
   List<String> _pages = [];
   DateTime _lastProgressSave = DateTime.now();
   static const _progressSaveThrottle = Duration(seconds: 2);
+
+  // Adjust layout constants
+  static const double bottomBarHeight = 56.0;
+  static const double bottomContentMargin = 64.0; // Reduced from 72
   final EdgeInsets contentPadding = const EdgeInsets.symmetric(
-    horizontal: 24,
-    vertical: 16,
+    horizontal: 20, // Reduced from 24
+    vertical: 12, // Reduced from 16
   );
 
   @override
@@ -101,49 +105,67 @@ class _BookReaderPageState extends State<BookReaderPage> {
   }
 
   List<String> _splitIntoPages(String content, BoxConstraints constraints) {
+    // Calculate available space with fixed margins
     final availableHeight =
         constraints.maxHeight - (contentPadding.top + contentPadding.bottom);
+
     final availableWidth =
         constraints.maxWidth - (contentPadding.left + contentPadding.right);
 
-    // Calculate how many characters fit in one line
-    final charPerLine = (availableWidth / (fontSize * 0.6)).floor();
-
-    // Calculate how many lines fit in one page
-    final linesPerPage = (availableHeight / (fontSize * 1.6)).floor();
-
-    // Calculate approximate characters per page
-    final charsPerPage = charPerLine * linesPerPage;
+    // Adjust text layout parameters for more content
+    final charPerLine = ((availableWidth / (fontSize * 0.55)) * 0.98)
+        .floor(); // More chars per line
+    final linesPerPage = ((availableHeight / (fontSize * 1.5)) * 0.98)
+        .floor(); // More lines per page
+    final charsPerPage =
+        (charPerLine * linesPerPage * 0.98).floor(); // More chars per page
 
     final pages = <String>[];
     int startIndex = 0;
 
     while (startIndex < content.length) {
-      // Find the end of the last complete sentence in this page
       int endIndex = startIndex + charsPerPage;
       if (endIndex < content.length) {
-        // Look for the end of a sentence (.!?) followed by a space or newline
-        final searchEnd = endIndex + 100; // Look ahead up to 100 chars
+        // Look ahead more characters for better sentence breaks
+        final searchEnd = endIndex + 150; // Increased from 100
         final searchEndIndex =
             searchEnd < content.length ? searchEnd : content.length;
         final searchText = content.substring(endIndex, searchEndIndex);
-        final sentenceEndMatch = RegExp(r'[.!?]\s+').firstMatch(searchText);
 
-        if (sentenceEndMatch != null) {
+        // Look for sentence endings or other break points
+        final sentenceEndMatch = RegExp(r'[.!?]\s+').firstMatch(searchText);
+        final paragraphEndMatch = RegExp(r'\n\s*\n').firstMatch(searchText);
+
+        if (paragraphEndMatch != null && paragraphEndMatch.start < 50) {
+          // If there's a paragraph break nearby, use it
+          endIndex += paragraphEndMatch.end;
+        } else if (sentenceEndMatch != null) {
           endIndex += sentenceEndMatch.end;
         } else {
-          // If no sentence end found, look for last space
+          // Look for natural break points in order of preference
+          final lastPeriod =
+              content.substring(startIndex, endIndex).lastIndexOf('. ');
+          final lastNewline =
+              content.substring(startIndex, endIndex).lastIndexOf('\n');
           final lastSpace =
               content.substring(startIndex, endIndex).lastIndexOf(' ');
-          if (lastSpace > 0) {
-            endIndex = startIndex + lastSpace;
+
+          if (lastPeriod > endIndex - 50 && lastPeriod > 0) {
+            endIndex = startIndex + lastPeriod + 2;
+          } else if (lastNewline > endIndex - 30 && lastNewline > 0) {
+            endIndex = startIndex + lastNewline + 1;
+          } else if (lastSpace > 0) {
+            endIndex = startIndex + lastSpace + 1;
           }
         }
       } else {
         endIndex = content.length;
       }
 
-      pages.add(content.substring(startIndex, endIndex).trim());
+      final pageContent = content.substring(startIndex, endIndex).trim();
+      if (pageContent.isNotEmpty) {
+        pages.add(pageContent);
+      }
       startIndex = endIndex;
     }
 
@@ -156,79 +178,96 @@ class _BookReaderPageState extends State<BookReaderPage> {
         content,
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               fontSize: fontSize,
-              height: 1.6,
+              height: 1.5, // Reduced from 1.6 for more compact text
+              letterSpacing: -0.2, // Slightly tighter letter spacing
             ),
       ),
     );
   }
 
   Widget _buildReader(String content) {
-    return Stack(
-      children: [
-        LayoutBuilder(
-          builder: (context, constraints) {
-            _pages = _splitIntoPages(content, constraints);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bottomPadding = MediaQuery.of(context).padding.bottom;
+        final safeAreaHeight = constraints.maxHeight - bottomPadding;
 
-            return PageView.builder(
-              controller: _pageController,
-              onPageChanged: _onPageChanged,
-              itemCount: _pages.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: contentPadding,
-                  child: _buildPageContent(_pages[index]),
-                );
-              },
-            );
-          },
-        ),
-        if (_showControls) ...[
-          Positioned(
-            left: 0,
-            top: 0,
-            bottom: 0,
-            child: GestureDetector(
-              onTap: () {
-                if (_currentPage > 0) {
-                  _pageController.previousPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
+        // Calculate content area height
+        final contentHeight =
+            safeAreaHeight - bottomBarHeight - bottomContentMargin;
+
+        // Calculate pages first
+        _pages = _splitIntoPages(
+            content,
+            BoxConstraints(
+              maxWidth: constraints.maxWidth,
+              maxHeight: contentHeight,
+            ));
+
+        return Stack(
+          children: [
+            Container(
+              height: contentHeight,
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: _onPageChanged,
+                itemCount: _pages.length,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: contentPadding,
+                    child: _buildPageContent(_pages[index]),
                   );
-                }
-              },
-              child: Container(
-                width: 60,
-                color: Colors.transparent,
+                },
               ),
             ),
-          ),
-          Positioned(
-            right: 0,
-            top: 0,
-            bottom: 0,
-            child: GestureDetector(
-              onTap: () {
-                if (_currentPage < _pages.length - 1) {
-                  _pageController.nextPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                }
-              },
-              child: Container(
-                width: 60,
-                color: Colors.transparent,
+            if (_showControls) ...[
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: bottomBarHeight + bottomPadding + bottomContentMargin,
+                child: GestureDetector(
+                  onTap: () {
+                    if (_currentPage > 0) {
+                      _pageController.previousPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  },
+                  child: Container(
+                    width: 60,
+                    color: Colors.transparent,
+                  ),
+                ),
               ),
+              Positioned(
+                right: 0,
+                top: 0,
+                bottom: bottomBarHeight + bottomPadding + bottomContentMargin,
+                child: GestureDetector(
+                  onTap: () {
+                    if (_currentPage < _pages.length - 1) {
+                      _pageController.nextPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  },
+                  child: Container(
+                    width: 60,
+                    color: Colors.transparent,
+                  ),
+                ),
+              ),
+            ],
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _buildBottomBar(),
             ),
-          ),
-        ],
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: _buildBottomBar(),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 
@@ -283,8 +322,6 @@ class _BookReaderPageState extends State<BookReaderPage> {
                         }
                       },
                     ),
-                    const Spacer(),
-                    Text('${_currentPage + 1} / ${_pages.length}'),
                     const Spacer(),
                     if (state.hasMoreContent && _isAtEnd)
                       ElevatedButton(
