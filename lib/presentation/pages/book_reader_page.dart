@@ -353,6 +353,79 @@ class _BookReaderPageState extends State<BookReaderPage> {
     );
   }
 
+  void _handleLibraryAction(BuildContext context, BookState state) {
+    if (state.selectedBook == null) return;
+
+    final bool isInLibrary = state.currentlyReadingBooks
+        .any((book) => book.id == state.selectedBook!.id);
+
+    if (isInLibrary) {
+      // Show confirmation dialog before removing
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Remove from Library?'),
+          content: const Text(
+              'This will keep your reading progress but remove the book from your library.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.read<BookBloc>().add(
+                      RemoveFromLibrary(state.selectedBook!),
+                    );
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Book removed from library'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              },
+              child: const Text('Remove'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Add to library
+      context.read<BookBloc>().add(
+            AddBookToLibrary(state.selectedBook!),
+          );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Book added to library'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  Widget _buildLibraryButton(BookState state) {
+    if (state.selectedBook == null) return const SizedBox.shrink();
+
+    final bool isInLibrary = state.currentlyReadingBooks
+        .any((book) => book.id == state.selectedBook!.id);
+
+    return IconButton(
+      icon: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          return ScaleTransition(scale: animation, child: child);
+        },
+        child: Icon(
+          isInLibrary ? Icons.book : Icons.book_outlined,
+          key: ValueKey<bool>(isInLibrary),
+        ),
+      ),
+      tooltip: isInLibrary ? 'Remove from Library' : 'Add to Library',
+      onPressed: () => _handleLibraryAction(context, state),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -376,13 +449,8 @@ class _BookReaderPageState extends State<BookReaderPage> {
         elevation: 0,
         automaticallyImplyLeading: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.bookmark_border),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Bookmarking coming soon!')),
-              );
-            },
+          BlocBuilder<BookBloc, BookState>(
+            builder: (context, state) => _buildLibraryButton(state),
           ),
         ],
       ),

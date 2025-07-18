@@ -120,3 +120,10 @@ class LoadMoreBooks extends BookEvent {
   @override
   List<Object?> get props => [category, currentCount];
 }
+
+class RemoveFromLibrary extends BookEvent {
+  final Book book;
+  const RemoveFromLibrary(this.book);
+  @override
+  List<Object?> get props => [book];
+}

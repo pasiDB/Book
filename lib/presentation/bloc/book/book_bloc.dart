@@ -48,6 +48,31 @@ class BookBloc extends Bloc<BookEvent, BookState> {
     on<LoadCurrentlyReadingBooks>(_onLoadCurrentlyReadingBooks);
     on<LoadReadingProgress>(_onLoadReadingProgress);
     on<SaveReadingProgress>(_onSaveReadingProgress);
+    on<RemoveFromLibrary>(_onRemoveFromLibrary);
+  }
+
+  @override
+  void onTransition(Transition<BookEvent, BookState> transition) {
+    super.onTransition(transition);
+    print(transition);
+  }
+
+  void _onRemoveFromLibrary(
+    RemoveFromLibrary event,
+    Emitter<BookState> emit,
+  ) async {
+    try {
+      // Remove from currently reading books
+      final updatedBooks = state.currentlyReadingBooks
+          .where((book) => book.id != event.book.id)
+          .toList();
+
+      emit(state.copyWith(
+        currentlyReadingBooks: updatedBooks,
+      ));
+    } catch (e) {
+      print('Error removing book from library: $e');
+    }
   }
 
   Future<void> _onPreloadBooksByTopic(
