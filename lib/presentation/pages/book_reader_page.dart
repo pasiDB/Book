@@ -7,7 +7,6 @@ import '../bloc/book/book_bloc_optimized_v2.dart';
 import '../bloc/book/book_event.dart';
 import '../bloc/book/book_state.dart';
 import '../widgets/modern_loading_indicator.dart';
-import '../../domain/entities/book.dart';
 
 class BookReaderPage extends StatefulWidget {
   final int bookId;

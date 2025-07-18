@@ -1,7 +1,6 @@
 import 'package:hive/hive.dart';
 import '../../data/models/book_hive_model.dart';
 import '../../domain/entities/book.dart';
-import '../constants/app_constants.dart';
 
 class HiveStorageService {
   static const String booksBoxName = 'books';

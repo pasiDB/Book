@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lottie/lottie.dart';
-import '../../core/theme/app_theme.dart';
 
 class ModernLoadingIndicator extends StatefulWidget {
   final String? message;
