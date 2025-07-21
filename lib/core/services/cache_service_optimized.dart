@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import '../constants/app_constants.dart';
+import 'dart:developer' as developer;
 
 class CacheServiceOptimized {
   final SharedPreferences _prefs;
@@ -125,14 +126,14 @@ class CacheServiceOptimized {
     // Try memory cache first
     final memoryValue = await getFromMemory<T>(key);
     if (memoryValue != null) {
-      print('📦 Memory cache hit: $key');
+      developer.log('📦 Memory cache hit: $key');
       return memoryValue;
     }
 
     // Try persistent cache
     final persistentValue = await getFromPersistent<T>(key);
     if (persistentValue != null) {
-      print('💾 Persistent cache hit: $key');
+      developer.log('💾 Persistent cache hit: $key');
       // Store in memory cache for faster access
       await setInMemory(key, persistentValue);
       return persistentValue;

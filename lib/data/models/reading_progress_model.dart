@@ -1,4 +1,5 @@
 import '../../domain/entities/reading_progress.dart';
+import 'dart:developer' as developer;
 
 class ReadingProgressModel extends ReadingProgress {
   const ReadingProgressModel({
@@ -24,7 +25,7 @@ class ReadingProgressModel extends ReadingProgress {
             [],
       );
     } catch (e) {
-      print('Error parsing reading progress model: $e');
+      developer.log('Error parsing reading progress model: $e');
       // Return a default reading progress with minimal data
       return ReadingProgressModel(
         bookId: 0,

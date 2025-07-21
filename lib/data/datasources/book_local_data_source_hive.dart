@@ -6,6 +6,7 @@ import '../../domain/entities/reading_progress.dart';
 import '../../domain/entities/book.dart';
 import '../../core/services/hive_storage_service.dart';
 import 'book_local_data_source.dart';
+import 'dart:developer' as developer;
 
 class BookLocalDataSourceHive implements BookLocalDataSource {
   final SharedPreferences sharedPreferences;
@@ -33,19 +34,19 @@ class BookLocalDataSourceHive implements BookLocalDataSource {
         'toBook() method should be called on BookModel instances');
   }
 
-    @override
+  @override
   Future<List<BookModel>> getCachedBooks(String key) async {
     // Extract category from key if it follows the pattern 'cached_books_category'
     String category = key;
     if (key.startsWith('cached_books_')) {
       category = key.substring('cached_books_'.length);
     }
-    
+
     final books = await _hiveService.getCachedBooksForCategory(category);
     if (books == null || books.isEmpty) {
       return [];
     }
-    
+
     // Convert Book entities back to BookModel
     return books.map((book) => BookToModelConversion.fromBook(book)).toList();
   }
@@ -175,7 +176,7 @@ class BookLocalDataSourceHive implements BookLocalDataSource {
       }
       return null;
     } catch (e) {
-      print('Error getting reading progress: $e');
+      developer.log('Error getting reading progress: $e');
       return null;
     }
   }

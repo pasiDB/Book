@@ -2,6 +2,7 @@ import 'package:hive/hive.dart';
 import '../../data/models/book_hive_model.dart';
 import '../../domain/entities/book.dart';
 import '../../core/constants/app_constants.dart';
+import 'dart:developer' as developer;
 
 class HiveStorageService {
   static const String booksBoxName = AppConstants.downloadedBooksKey;
@@ -52,7 +53,7 @@ class HiveStorageService {
   /// Cache books for a specific category
   Future<void> cacheBooksForCategory(String category, List<Book> books) async {
     try {
-      print(
+      developer.log(
           '💾 Starting to cache ${books.length} books for category: $category');
       final hiveBooks =
           books.map((book) => BookHiveModel.fromBook(book)).toList();
@@ -69,14 +70,14 @@ class HiveStorageService {
         await _booksBox.put(hiveBook.id, hiveBook);
       }
 
-      print('✅ Cached ${books.length} books for category: $category');
+      developer.log('✅ Cached ${books.length} books for category: $category');
 
       // Verification
       final verification = await getCachedBooksForCategory(category);
-      print(
+      developer.log(
           '🔍 Verification: ${verification?.length ?? 0} books retrieved after caching for $category');
     } catch (e) {
-      print('❌ Error caching books for category $category: $e');
+      developer.log('❌ Error caching books for category $category: $e');
       rethrow;
     }
   }
@@ -84,28 +85,29 @@ class HiveStorageService {
   /// Get cached books for a specific category
   Future<List<Book>?> getCachedBooksForCategory(String category) async {
     try {
-      print('🔍 Looking for cached books in category: $category');
+      developer.log('🔍 Looking for cached books in category: $category');
       final categoryCache = await _categoryCacheBox.get(category);
 
       if (categoryCache == null) {
-        print('📭 No cached books found for category: $category');
+        developer.log('📭 No cached books found for category: $category');
         return null;
       }
 
       // Check if cache is expired
       if (categoryCache.isExpired) {
-        print('⏰ Cache expired for category: $category');
+        developer.log('⏰ Cache expired for category: $category');
         await _categoryCacheBox.delete(category);
         return null;
       }
 
       final books =
           categoryCache.books.map((hiveBook) => hiveBook.toBook()).toList();
-      print(
-          '📦 Retrieved ${books.length} cached books for category: $category');
+      developer.log(
+          '�� Retrieved ${books.length} cached books for category: $category');
       return books;
     } catch (e) {
-      print('❌ Error retrieving cached books for category $category: $e');
+      developer
+          .log('❌ Error retrieving cached books for category $category: $e');
       return null;
     }
   }
@@ -116,7 +118,7 @@ class HiveStorageService {
       final categoryCache = await _categoryCacheBox.get(category);
       return categoryCache != null && !categoryCache.isExpired;
     } catch (e) {
-      print('❌ Error checking cache for category $category: $e');
+      developer.log('❌ Error checking cache for category $category: $e');
       return false;
     }
   }
@@ -126,9 +128,9 @@ class HiveStorageService {
     try {
       final hiveBook = BookHiveModel.fromBook(book);
       await _booksBox.put(book.id, hiveBook);
-      print('✅ Cached book: ${book.title}');
+      developer.log('✅ Cached book: ${book.title}');
     } catch (e) {
-      print('❌ Error caching book ${book.id}: $e');
+      developer.log('❌ Error caching book ${book.id}: $e');
       rethrow;
     }
   }
@@ -142,7 +144,7 @@ class HiveStorageService {
       }
       return hiveBook.toBook();
     } catch (e) {
-      print('❌ Error retrieving cached book $bookId: $e');
+      developer.log('❌ Error retrieving cached book $bookId: $e');
       return null;
     }
   }
@@ -161,7 +163,7 @@ class HiveStorageService {
       }
       return categories;
     } catch (e) {
-      print('❌ Error getting cached categories: $e');
+      developer.log('❌ Error getting cached categories: $e');
       return [];
     }
   }
@@ -171,7 +173,7 @@ class HiveStorageService {
     try {
       return _booksBox.length;
     } catch (e) {
-      print('❌ Error getting total cached books count: $e');
+      developer.log('❌ Error getting total cached books count: $e');
       return 0;
     }
   }
@@ -180,9 +182,9 @@ class HiveStorageService {
   Future<void> clearCategoryCache(String category) async {
     try {
       await _categoryCacheBox.delete(category);
-      print('🧹 Cleared cache for category: $category');
+      developer.log('🧹 Cleared cache for category: $category');
     } catch (e) {
-      print('❌ Error clearing cache for category $category: $e');
+      developer.log('❌ Error clearing cache for category $category: $e');
     }
   }
 
@@ -191,9 +193,9 @@ class HiveStorageService {
     try {
       await _booksBox.clear();
       await _categoryCacheBox.clear();
-      print('🧹 Cleared all book cache');
+      developer.log('🧹 Cleared all book cache');
     } catch (e) {
-      print('❌ Error clearing all cache: $e');
+      developer.log('❌ Error clearing all cache: $e');
     }
   }
 
@@ -215,9 +217,9 @@ class HiveStorageService {
         await _categoryCacheBox.delete(key);
       }
 
-      print('🧹 Cleared ${expiredKeys.length} expired cache entries');
+      developer.log('🧹 Cleared ${expiredKeys.length} expired cache entries');
     } catch (e) {
-      print('❌ Error clearing expired cache: $e');
+      developer.log('❌ Error clearing expired cache: $e');
     }
   }
 
@@ -234,7 +236,7 @@ class HiveStorageService {
         'cacheSize': _approximateCacheSize(),
       };
     } catch (e) {
-      print('❌ Error getting cache stats: $e');
+      developer.log('❌ Error getting cache stats: $e');
       return {
         'totalBooks': 0,
         'cachedCategories': 0,
@@ -285,10 +287,10 @@ class HiveStorageService {
         await _booksBox.delete(bookId);
       }
 
-      print(
+      developer.log(
           '🧹 Optimized cache: removed ${booksToRemove.length} orphaned books');
     } catch (e) {
-      print('❌ Error optimizing cache: $e');
+      developer.log('❌ Error optimizing cache: $e');
     }
   }
 
@@ -298,9 +300,9 @@ class HiveStorageService {
       await _booksBox.close();
       await _categoryCacheBox.close();
       await _appDataBox.close();
-      print('🔒 Closed all Hive boxes');
+      developer.log('🔒 Closed all Hive boxes');
     } catch (e) {
-      print('❌ Error closing Hive boxes: $e');
+      developer.log('❌ Error closing Hive boxes: $e');
     }
   }
 
@@ -312,7 +314,7 @@ class HiveStorageService {
       await _categoryCacheBox.flush();
       await _appDataBox.flush();
     } catch (e) {
-      print('❌ Error flushing Hive data: $e');
+      developer.log('❌ Error flushing Hive data: $e');
     }
   }
 }

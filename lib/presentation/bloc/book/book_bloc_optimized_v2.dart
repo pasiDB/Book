@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import '../../../domain/usecases/get_books_by_topic.dart';
 import '../../../domain/usecases/search_books.dart';
@@ -135,9 +136,9 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
 
       // Save to SharedPreferences or other persistent storage
       // This would require injecting SharedPreferences into the BLoC
-      print('Cache info saved: ${cacheInfo.length} categories');
+      developer.log('Cache info saved: ${cacheInfo.length} categories');
     } catch (e) {
-      print('Failed to save cache: $e');
+      developer.log('Failed to save cache: $e');
     }
   }
 
@@ -145,9 +146,9 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
     try {
       // Load from persistent storage
       // This would require injecting SharedPreferences into the BLoC
-      print('Cache loaded from storage');
+      developer.log('Cache loaded from storage');
     } catch (e) {
-      print('Failed to load cache: $e');
+      developer.log('Failed to load cache: $e');
     }
   }
 
@@ -207,9 +208,10 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
         timestamp: DateTime.now(),
       );
 
-      print('Preloaded ${books.length} books for category: ${event.topic}');
+      developer
+          .log('Preloaded ${books.length} books for category: ${event.topic}');
     } catch (e) {
-      print('Preload failed for ${event.topic}: ${e.toString()}');
+      developer.log('Preload failed for ${event.topic}: ${e.toString()}');
     }
   }
 
@@ -529,7 +531,7 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
     _bookContentCache.clear();
     _bookDetailsCache.clear();
 
-    print('Cache cleared');
+    developer.log('Cache cleared');
 
     // Optionally reload current category
     if (state.category != null) {

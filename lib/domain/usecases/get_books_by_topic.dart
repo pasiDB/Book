@@ -1,5 +1,6 @@
 import '../entities/book.dart';
 import '../repositories/book_repository.dart';
+import 'dart:developer' as developer;
 
 class GetBooksByTopic {
   final BookRepository repository;
@@ -7,10 +8,10 @@ class GetBooksByTopic {
   GetBooksByTopic(this.repository);
 
   Future<List<Book>> call(String topic) async {
-    print('🎯 [UseCase] GetBooksByTopic called for topic: $topic');
-    print('🎯 [UseCase] Repository type: ${repository.runtimeType}');
+    developer.log('🎯 [UseCase] GetBooksByTopic called for topic: $topic');
+    developer.log('🎯 [UseCase] Repository type: ${repository.runtimeType}');
     final result = await repository.getBooksByTopic(topic);
-    print(
+    developer.log(
         '🎯 [UseCase] Repository returned ${result.length} books for topic: $topic');
     return result;
   }
@@ -23,12 +24,12 @@ class GetBooksByTopicWithPagination {
 
   Future<List<Book>> call(String topic,
       {int limit = 10, int offset = 0}) async {
-    print(
+    developer.log(
         '🎯 [UseCase] GetBooksByTopicWithPagination called for topic: $topic (limit: $limit, offset: $offset)');
-    print('🎯 [UseCase] Repository type: ${repository.runtimeType}');
+    developer.log('🎯 [UseCase] Repository type: ${repository.runtimeType}');
     final result = await repository.getBooksByTopicWithPagination(topic,
         limit: limit, offset: offset);
-    print(
+    developer.log(
         '🎯 [UseCase] Repository returned ${result.length} books for topic: $topic');
     return result;
   }

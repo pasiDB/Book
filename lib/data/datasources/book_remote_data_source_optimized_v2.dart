@@ -3,6 +3,7 @@ import '../../core/services/cache_service_optimized.dart';
 import '../models/api_response_model.dart';
 import '../models/book_model.dart';
 import '../../core/constants/app_constants.dart';
+import 'dart:developer' as developer;
 
 abstract class BookRemoteDataSourceOptimized {
   Future<List<BookModel>> getBooksByTopic(String topic);
@@ -49,7 +50,7 @@ class BookRemoteDataSourceOptimizedImpl
 
       return books;
     } catch (e) {
-      print('Error fetching books by topic: $e');
+      developer.log('Error fetching books by topic: $e');
       rethrow;
     }
   }
@@ -68,7 +69,7 @@ class BookRemoteDataSourceOptimizedImpl
 
       return allBooks.sublist(startIndex, endIndex);
     } catch (e) {
-      print('Error fetching books with pagination: $e');
+      developer.log('Error fetching books with pagination: $e');
       rethrow;
     }
   }
@@ -105,7 +106,7 @@ class BookRemoteDataSourceOptimizedImpl
       }
       return [...exactTitle, ...partialTitle, ...authorMatch, ...others];
     } catch (e) {
-      print('Error searching books: $e');
+      developer.log('Error searching books: $e');
       rethrow;
     }
   }
@@ -132,7 +133,7 @@ class BookRemoteDataSourceOptimizedImpl
 
       return book;
     } catch (e) {
-      print('Error fetching book by ID: $e');
+      developer.log('Error fetching book by ID: $e');
       return null;
     }
   }
@@ -162,7 +163,7 @@ class BookRemoteDataSourceOptimizedImpl
 
       return content;
     } catch (e) {
-      print('Error fetching book content: $e');
+      developer.log('Error fetching book content: $e');
       rethrow;
     }
   }
@@ -179,7 +180,7 @@ class BookRemoteDataSourceOptimizedImpl
       final apiResponse = ApiResponseModel.fromJson(response);
       return apiResponse.results;
     } catch (e) {
-      print('Error fetching books by page: $e');
+      developer.log('Error fetching books by page: $e');
       rethrow;
     }
   }
@@ -212,7 +213,7 @@ class BookRemoteDataSourceOptimizedImpl
 
       return content;
     } catch (e) {
-      print('Error fetching book content by Gutenberg ID: $e');
+      developer.log('Error fetching book content by Gutenberg ID: $e');
       rethrow;
     }
   }
@@ -249,7 +250,7 @@ class BookRemoteDataSourceOptimizedImpl
       ];
       return allBooks;
     } catch (e) {
-      print('Error fetching books batch: $e');
+      developer.log('Error fetching books batch: $e');
       rethrow;
     }
   }
@@ -297,7 +298,7 @@ class BookRemoteDataSourceOptimizedImpl
 
       return results;
     } catch (e) {
-      print('Error fetching book contents batch: $e');
+      developer.log('Error fetching book contents batch: $e');
       rethrow;
     }
   }

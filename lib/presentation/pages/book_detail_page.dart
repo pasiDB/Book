@@ -6,6 +6,7 @@ import '../bloc/book/book_event.dart';
 import '../bloc/book/book_state.dart';
 import '../../domain/entities/book.dart';
 import '../widgets/modern_loading_indicator.dart';
+import 'dart:developer' as developer;
 
 class BookDetailPage extends StatefulWidget {
   final int bookId;
@@ -33,16 +34,16 @@ class _BookDetailPageState extends State<BookDetailPage> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: theme.colorScheme.primary),
           onPressed: () {
-            print('Back button pressed');
-            print('Can pop: ${Navigator.of(context).canPop()}');
-            print('Route: ${ModalRoute.of(context)?.settings.name}');
+            developer.log('Back button pressed');
+            developer.log('Can pop: ${Navigator.of(context).canPop()}');
+            developer.log('Route: ${ModalRoute.of(context)?.settings.name}');
 
             // Try multiple navigation methods
             if (Navigator.of(context).canPop()) {
-              print('Using Navigator.pop()');
+              developer.log('Using Navigator.pop()');
               Navigator.of(context).pop();
             } else {
-              print('Using context.go() to home');
+              developer.log('Using context.go() to home');
               context.go('/');
             }
           },

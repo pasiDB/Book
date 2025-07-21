@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'dart:async';
 import '../constants/app_constants.dart';
+import 'dart:developer' as developer;
 
 class ApiServiceOptimized {
   final Dio _dio;
@@ -40,16 +41,16 @@ class ApiServiceOptimized {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          print('🌐 API Request: ${options.method} ${options.path}');
+          developer.log('🌐 API Request: ${options.method} ${options.path}');
           handler.next(options);
         },
         onResponse: (response, handler) {
-          print(
+          developer.log(
               '✅ API Response: ${response.statusCode} ${response.requestOptions.path}');
           handler.next(response);
         },
         onError: (error, handler) {
-          print(
+          developer.log(
               '❌ API Error: ${error.response?.statusCode} ${error.requestOptions.path}');
           handler.next(error);
         },
@@ -70,7 +71,7 @@ class ApiServiceOptimized {
           .join('&'));
     }
     final cacheKey = buffer.toString();
-    print('🔑 Generated cache key: $cacheKey');
+    developer.log('🔑 Generated cache key: $cacheKey');
     return cacheKey;
   }
 
@@ -92,13 +93,13 @@ class ApiServiceOptimized {
 
     // Check cache first
     if (useCache && _isCacheValid(cacheKey, cacheExpiry)) {
-      print('📦 Using cached data for: $path');
+      developer.log('📦 Using cached data for: $path');
       return _cache[cacheKey] as T;
     }
 
     // Check if there's already a pending request for this key
     if (_pendingRequests.containsKey(cacheKey)) {
-      print('⏳ Waiting for pending request: $path');
+      developer.log('⏳ Waiting for pending request: $path');
       final result = await _pendingRequests[cacheKey]!.future;
       return result as T;
     }
@@ -108,9 +109,10 @@ class ApiServiceOptimized {
     _pendingRequests[cacheKey] = completer;
 
     try {
-      print(
+      developer.log(
           '🌐 Making network request to: $path with params: $queryParameters');
-      print('🔗 Full URL would be: ${_nextConnection.options.baseUrl}$path');
+      developer
+          .log('🔗 Full URL would be: ${_nextConnection.options.baseUrl}$path');
       final response = await _nextConnection.get(
         path,
         queryParameters: queryParameters,
@@ -123,7 +125,7 @@ class ApiServiceOptimized {
         ),
       );
 
-      print('✅ Response received: ${response.statusCode}');
+      developer.log('✅ Response received: ${response.statusCode}');
       final data = response.data as T;
 
       // Cache the response
@@ -136,15 +138,15 @@ class ApiServiceOptimized {
       _pendingRequests.remove(cacheKey);
       return data;
     } on DioException catch (e) {
-      print('❌ Dio error for $path: ${e.message}');
-      print('❌ Dio error type: ${e.type}');
-      print('❌ Dio response: ${e.response?.statusCode}');
+      developer.log('❌ Dio error for $path: ${e.message}');
+      developer.log('❌ Dio error type: ${e.type}');
+      developer.log('❌ Dio response: ${e.response?.statusCode}');
       final apiException = _handleDioError(e);
       completer.completeError(apiException);
       _pendingRequests.remove(cacheKey);
       rethrow;
     } catch (e) {
-      print('❌ Unexpected error for $path: $e');
+      developer.log('❌ Unexpected error for $path: $e');
       final apiException = ApiException('Unexpected error: $e');
       completer.completeError(apiException);
       _pendingRequests.remove(cacheKey);
@@ -184,7 +186,7 @@ class ApiServiceOptimized {
           rethrow;
         }
 
-        print('🔄 Retry attempt $attempts for: $path');
+        developer.log('🔄 Retry attempt $attempts for: $path');
         await Future.delayed(delay * attempts); // Exponential backoff
       }
     }
@@ -196,7 +198,7 @@ class ApiServiceOptimized {
     if (path == null) {
       _cache.clear();
       _cacheTimestamps.clear();
-      print('🗑️ Cache cleared');
+      developer.log('🗑️ Cache cleared');
     } else {
       final keysToRemove =
           _cache.keys.where((key) => key.startsWith(path)).toList();
@@ -204,7 +206,7 @@ class ApiServiceOptimized {
         _cache.remove(key);
         _cacheTimestamps.remove(key);
       }
-      print('🗑️ Cache cleared for: $path');
+      developer.log('🗑️ Cache cleared for: $path');
     }
   }
 

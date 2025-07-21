@@ -1,6 +1,7 @@
 import 'package:hive/hive.dart';
 import '../../domain/entities/book.dart';
 import '../../domain/entities/reading_progress.dart';
+import 'dart:developer' as developer;
 
 part 'book_hive_model.g.dart';
 
@@ -194,7 +195,7 @@ class BookHiveModel extends HiveObject {
         formats: formats,
       );
     } catch (e) {
-      print('Error parsing book hive model: $e');
+      developer.log('Error parsing book hive model: $e');
       // Return a default book model with minimal data
       return BookHiveModel(
         id: 0,

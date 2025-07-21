@@ -20,28 +20,29 @@ import 'presentation/pages/book_reader_page.dart';
 import 'presentation/pages/settings_page.dart';
 
 import 'presentation/widgets/modern_loading_indicator.dart';
+import 'dart:developer' as developer;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  print('🚀 [Main] Starting Hive-optimized app initialization...');
+  developer.log('🚀 [Main] Starting Hive-optimized app initialization...');
 
   try {
     // Initialize Hive
-    print('📦 [Main] Initializing Hive...');
+    developer.log('📦 [Main] Initializing Hive...');
     await Hive.initFlutter();
-    print('✅ [Main] Hive initialized successfully');
+    developer.log('✅ [Main] Hive initialized successfully');
 
     // Initialize Hive-optimized dependency injection
-    print('🏗️ [Main] Initializing Hive dependency injection...');
+    developer.log('🏗️ [Main] Initializing Hive dependency injection...');
     await DependencyInjectionHive.initialize();
 
-    print('✅ [Main] Hive dependency injection completed');
+    developer.log('✅ [Main] Hive dependency injection completed');
 
-    print('🎉 [Main] All initialization completed successfully');
+    developer.log('🎉 [Main] All initialization completed successfully');
   } catch (e, stackTrace) {
-    print('❌ [Main] Initialization failed: $e');
-    print('📍 [Main] Stack trace: $stackTrace');
+    developer.log('❌ [Main] Initialization failed: $e');
+    developer.log('📍 [Main] Stack trace: $stackTrace');
     // Still run the app to see what happens
   }
 

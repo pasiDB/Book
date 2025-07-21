@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'dart:developer' as developer;
 
 import '../services/hive_storage_service.dart';
 import '../services/api_service_optimized.dart';
@@ -33,47 +34,48 @@ class DependencyInjectionHive {
   static late final BookBlocOptimizedV2 _bookBloc;
 
   static Future<void> initialize() async {
-    print('🚀 Initializing Hive-based dependency injection...');
+    developer.log('🚀 Initializing Hive-based dependency injection...');
 
     try {
       // Initialize Hive first
-      print('📦 Step 1: Initializing Hive storage...');
+      developer.log('📦 Step 1: Initializing Hive storage...');
       await _initializeHive();
 
       // Initialize core dependencies
-      print('🔧 Step 2: Initializing core dependencies...');
+      developer.log('🔧 Step 2: Initializing core dependencies...');
       await _initializeCore();
 
       // Initialize services
-      print('⚙️ Step 3: Initializing services...');
+      developer.log('⚙️ Step 3: Initializing services...');
       await _initializeServices();
 
       // Initialize data sources
-      print('📊 Step 4: Initializing data sources...');
+      developer.log('📊 Step 4: Initializing data sources...');
       _initializeDataSources();
 
       // Initialize repositories
-      print('🏪 Step 5: Initializing repositories...');
+      developer.log('🏪 Step 5: Initializing repositories...');
       _initializeRepositories();
 
       // Initialize use cases
-      print('🎯 Step 6: Initializing use cases...');
+      developer.log('🎯 Step 6: Initializing use cases...');
       _initializeUseCases();
 
       // Initialize BLoCs
-      print('🧠 Step 7: Initializing BLoCs...');
+      developer.log('🧠 Step 7: Initializing BLoCs...');
       _initializeBlocs();
 
-      print('✅ Hive-based dependency injection initialized successfully');
+      developer
+          .log('✅ Hive-based dependency injection initialized successfully');
     } catch (e, stackTrace) {
-      print('❌ Error during Hive DI initialization: $e');
-      print('📍 Stack trace: $stackTrace');
+      developer.log('❌ Error during Hive DI initialization: $e');
+      developer.log('📍 Stack trace: $stackTrace');
       rethrow;
     }
   }
 
   static Future<void> _initializeHive() async {
-    print('📦 Initializing Hive storage...');
+    developer.log('📦 Initializing Hive storage...');
 
     // Register Hive adapters
     if (!Hive.isAdapterRegistered(0)) {
@@ -87,7 +89,7 @@ class DependencyInjectionHive {
     _hiveStorageService = HiveStorageService.instance;
     await _hiveStorageService.initialize();
 
-    print('✅ Hive storage initialized');
+    developer.log('✅ Hive storage initialized');
   }
 
   static Future<void> _initializeCore() async {
@@ -122,7 +124,8 @@ class DependencyInjectionHive {
       remoteDataSource: _remoteDataSource,
       localDataSource: _localDataSource,
     );
-    print('🏗️ [Hive DI] Created repository: ${_bookRepository.runtimeType}');
+    developer.log(
+        '🏗️ [Hive DI] Created repository: ${_bookRepository.runtimeType}');
     _readingRepository = ReadingRepositoryImpl(_sharedPreferences);
   }
 
@@ -131,10 +134,10 @@ class DependencyInjectionHive {
   }
 
   static void _initializeBlocs() {
-    print(
+    developer.log(
         '🏗️ [Hive DI] Creating BLoC with repository: ${_bookRepository.runtimeType}');
     final getBooksByTopic = GetBooksByTopic(_bookRepository);
-    print(
+    developer.log(
         '🏗️ [Hive DI] Created GetBooksByTopic with repository: ${getBooksByTopic.repository.runtimeType}');
 
     _bookBloc = BookBlocOptimizedV2(
@@ -147,7 +150,7 @@ class DependencyInjectionHive {
       bookRepository: _bookRepository,
       readingRepository: _readingRepository,
     );
-    print('🏗️ [Hive DI] Created BLoC: ${_bookBloc.runtimeType}');
+    developer.log('🏗️ [Hive DI] Created BLoC: ${_bookBloc.runtimeType}');
   }
 
   // Getters for dependencies
@@ -183,7 +186,7 @@ class DependencyInjectionHive {
     try {
       return await _hiveStorageService.getCacheStats();
     } catch (e) {
-      print('❌ Error getting Hive stats: $e');
+      developer.log('❌ Error getting Hive stats: $e');
       return {
         'totalBooks': 0,
         'cachedCategories': 0,
@@ -200,23 +203,24 @@ class DependencyInjectionHive {
   // First launch and cache management methods
   static Future<bool> isFirstLaunch() async {
     final result = await _localDataSource.isFirstLaunch();
-    print('🔍 First launch check: $result');
+    developer.log('🔍 First launch check: $result');
     return result;
   }
 
   static Future<void> markFirstLaunchCompleted() async {
-    print('✅ Marking first launch as completed');
+    developer.log('✅ Marking first launch as completed');
     await _localDataSource.markFirstLaunchCompleted();
     final verification = await _localDataSource.isFirstLaunch();
-    print('🔍 First launch verification after marking complete: $verification');
+    developer.log(
+        '🔍 First launch verification after marking complete: $verification');
   }
 
   static Future<bool> areAllCategoriesCached() async {
     final result = await _localDataSource.areAllCategoriesCached();
-    print('🔍 Are all categories cached: $result');
+    developer.log('🔍 Are all categories cached: $result');
     if (!result) {
       final cacheStats = await _localDataSource.getCacheStatistics();
-      print('📊 Cache stats: $cacheStats');
+      developer.log('📊 Cache stats: $cacheStats');
     }
     return result;
   }
@@ -236,7 +240,7 @@ class DependencyInjectionHive {
   static Future<void> resetToFirstLaunch() async {
     await _localDataSource.resetFirstLaunchFlag();
     await _localDataSource.clearAllBookCache();
-    print('🔄 Reset to first launch - cleared all cache');
+    developer.log('🔄 Reset to first launch - cleared all cache');
   }
 
   // Cleanup method
@@ -246,9 +250,9 @@ class DependencyInjectionHive {
       await _hiveStorageService.flush();
       await _hiveStorageService.close();
       _dio.close();
-      print('🧹 Hive-based dependencies disposed');
+      developer.log('🧹 Hive-based dependencies disposed');
     } catch (e) {
-      print('❌ Error disposing dependencies: $e');
+      developer.log('❌ Error disposing dependencies: $e');
     }
   }
 }
@@ -284,13 +288,13 @@ class BookBlocHiveOptimized extends BookBlocOptimizedV2 {
 
     final defaultCategory = AppConstants.bookCategories.first;
 
-    print('📱 Loading default category: $defaultCategory');
+    developer.log('📱 Loading default category: $defaultCategory');
 
     // Check if this is the first launch
     final isFirstLaunch = await _localDataSource.isFirstLaunch();
 
     if (isFirstLaunch) {
-      print('🚀 First launch detected - will load all categories');
+      developer.log('🚀 First launch detected - will load all categories');
       // On first launch, load default category first, then load others in background
       add(LoadBooksByTopic(defaultCategory));
 
@@ -305,10 +309,10 @@ class BookBlocHiveOptimized extends BookBlocOptimizedV2 {
           await _localDataSource.hasCachedBooksForCategory(defaultCategory);
 
       if (hasCachedBooks) {
-        print('📦 Loading from cache: $defaultCategory');
+        developer.log('📦 Loading from cache: $defaultCategory');
         add(LoadBooksByTopic(defaultCategory));
       } else {
-        print('⚠️ No cached data found, loading from API');
+        developer.log('⚠️ No cached data found, loading from API');
         add(LoadBooksByTopic(defaultCategory));
       }
     }
@@ -321,7 +325,7 @@ class BookBlocHiveOptimized extends BookBlocOptimizedV2 {
 
     final categoriesToPreload = AppConstants.bookCategories.skip(1);
 
-    print(
+    developer.log(
         '🔄 Preloading ${categoriesToPreload.length} categories in background...');
 
     for (final category in categoriesToPreload) {
@@ -330,20 +334,20 @@ class BookBlocHiveOptimized extends BookBlocOptimizedV2 {
         final hasCached =
             await _localDataSource.hasCachedBooksForCategory(category);
         if (!hasCached) {
-          print('📥 Preloading category: $category');
+          developer.log('📥 Preloading category: $category');
           add(PreloadBooksByTopic(category));
 
           // Add small delay between requests to avoid overwhelming the API
           await Future.delayed(const Duration(milliseconds: 200));
         } else {
-          print('✅ Category already cached: $category');
+          developer.log('✅ Category already cached: $category');
         }
       } catch (e) {
-        print('❌ Error preloading category $category: $e');
+        developer.log('❌ Error preloading category $category: $e');
       }
     }
 
-    print('✅ Background preloading completed');
+    developer.log('✅ Background preloading completed');
   }
 
   /// Get cache statistics for debugging/analytics
@@ -353,7 +357,7 @@ class BookBlocHiveOptimized extends BookBlocOptimizedV2 {
 
   /// Force refresh all categories (useful for pull-to-refresh)
   Future<void> forceRefreshAllCategories() async {
-    print('🔄 Force refreshing all categories...');
+    developer.log('🔄 Force refreshing all categories...');
     await _localDataSource.clearAllBookCache();
 
     for (final category in AppConstants.bookCategories) {

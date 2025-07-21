@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/repositories/reading_repository.dart';
 import '../../domain/entities/reading_progress.dart';
+import 'dart:developer' as developer;
 
 class ReadingRepositoryImpl implements ReadingRepository {
   final SharedPreferences _prefs;
@@ -26,7 +27,7 @@ class ReadingRepositoryImpl implements ReadingRepository {
       }
       return null;
     } catch (e) {
-      print('Error getting reading progress: $e');
+      developer.log('Error getting reading progress: $e');
       return null;
     }
   }
@@ -48,7 +49,7 @@ class ReadingRepositoryImpl implements ReadingRepository {
       // Also update the currently reading books list
       await _addToCurrentlyReading(progress.bookId);
     } catch (e) {
-      print('Error saving reading progress: $e');
+      developer.log('Error saving reading progress: $e');
     }
   }
 
@@ -67,7 +68,7 @@ class ReadingRepositoryImpl implements ReadingRepository {
 
       await saveReadingProgress(updatedProgress);
     } catch (e) {
-      print('Error updating current position: $e');
+      developer.log('Error updating current position: $e');
     }
   }
 
@@ -87,7 +88,7 @@ class ReadingRepositoryImpl implements ReadingRepository {
         await _prefs.setString(bookmarksKey, json.encode(bookmarks));
       }
     } catch (e) {
-      print('Error adding bookmark: $e');
+      developer.log('Error adding bookmark: $e');
     }
   }
 
@@ -104,7 +105,7 @@ class ReadingRepositoryImpl implements ReadingRepository {
         await _prefs.setString(bookmarksKey, json.encode(bookmarks));
       }
     } catch (e) {
-      print('Error removing bookmark: $e');
+      developer.log('Error removing bookmark: $e');
     }
   }
 
@@ -129,7 +130,7 @@ class ReadingRepositoryImpl implements ReadingRepository {
       }
       return [];
     } catch (e) {
-      print('Error getting currently reading books: $e');
+      developer.log('Error getting currently reading books: $e');
       return [];
     }
   }
@@ -149,7 +150,7 @@ class ReadingRepositoryImpl implements ReadingRepository {
             _currentlyReadingKey, json.encode(currentlyReading));
       }
     } catch (e) {
-      print('Error adding to currently reading: $e');
+      developer.log('Error adding to currently reading: $e');
     }
   }
 }

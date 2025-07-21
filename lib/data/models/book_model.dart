@@ -1,4 +1,5 @@
 import '../../domain/entities/book.dart';
+import 'dart:developer' as developer;
 
 class BookModel extends Book {
   const BookModel({
@@ -73,7 +74,7 @@ class BookModel extends Book {
         formats: formats,
       );
     } catch (e) {
-      print('Error parsing book model: $e');
+      developer.log('Error parsing book model: $e');
       // Return a default book model with minimal data
       return const BookModel(
         id: 0,
