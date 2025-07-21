@@ -6,9 +6,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'remote_config_service.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:provider/provider.dart';
 
 import 'core/di/dependency_injection_hive.dart';
 import 'core/theme/app_theme.dart';
+import 'core/services/settings_service.dart';
 import 'presentation/bloc/book/book_bloc_optimized_v2.dart';
 import 'presentation/pages/home_page.dart';
 import 'presentation/pages/search_page.dart';
@@ -49,6 +51,9 @@ void main() async {
   await RemoteConfigService.instance.init();
   RemoteConfigService.instance.listenForUrlChanges();
 
+  // Initialize settings service
+  await SettingsService.instance.init();
+
   runApp(const GlobalWebViewWrapper(child: MyAppHiveOptimized()));
 }
 
@@ -57,19 +62,26 @@ class MyAppHiveOptimized extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<BookBlocOptimizedV2>.value(
-          value: DependencyInjectionHive.bookBloc,
-        ),
-      ],
-      child: MaterialApp(
-        title: 'Book Reader - Hive Optimized',
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        debugShowCheckedModeBanner: false,
-        home: const SplashScreenHiveOptimized(),
+    return ChangeNotifierProvider.value(
+      value: SettingsService.instance,
+      child: Consumer<SettingsService>(
+        builder: (context, settings, child) {
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider<BookBlocOptimizedV2>.value(
+                value: DependencyInjectionHive.bookBloc,
+              ),
+            ],
+            child: MaterialApp(
+              title: 'Book Reader - Hive Optimized',
+              theme: AppTheme.lightTheme,
+              darkTheme: AppTheme.darkTheme,
+              themeMode: settings.themeMode,
+              debugShowCheckedModeBanner: false,
+              home: const SplashScreenHiveOptimized(),
+            ),
+          );
+        },
       ),
     );
   }
@@ -201,20 +213,24 @@ class _MainAppRouterHiveOptimized extends StatelessWidget {
         ),
       ],
     );
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<BookBlocOptimizedV2>.value(
-          value: DependencyInjectionHive.bookBloc,
-        ),
-      ],
-      child: MaterialApp.router(
-        title: 'Book Reader',
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        routerConfig: router,
-        debugShowCheckedModeBanner: false,
-      ),
+    return Consumer<SettingsService>(
+      builder: (context, settings, child) {
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider<BookBlocOptimizedV2>.value(
+              value: DependencyInjectionHive.bookBloc,
+            ),
+          ],
+          child: MaterialApp.router(
+            title: 'Book Reader',
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: settings.themeMode,
+            routerConfig: router,
+            debugShowCheckedModeBanner: false,
+          ),
+        );
+      },
     );
   }
 }
