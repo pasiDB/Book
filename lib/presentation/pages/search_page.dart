@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,7 @@ import '../bloc/book/book_event.dart';
 import '../bloc/book/book_state.dart';
 import '../widgets/book_card.dart';
 import '../widgets/modern_loading_indicator.dart';
+import '../../core/services/search_history_service.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -17,32 +19,94 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  Timer? _debounce;
+  bool _isSearching = false;
+  bool _showHistory = false;
+  List<String> _history = [];
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+    _initHistory();
+  }
+
+  Future<void> _initHistory() async {
+    await SearchHistoryService.instance.init();
+    setState(() {
+      _history = SearchHistoryService.instance.history;
+    });
+  }
+
+  void _addToHistory(String query) async {
+    await SearchHistoryService.instance.addQuery(query);
+    setState(() {
+      _history = SearchHistoryService.instance.history;
+    });
+  }
+
+  void _clearHistory() async {
+    await SearchHistoryService.instance.clearHistory();
+    setState(() {
+      _history = [];
+    });
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
   void _onSearchChanged() {
-    final query = _searchController.text.trim();
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    setState(() {
+      _showHistory = _searchController.text.isEmpty;
+    });
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      final query = _searchController.text.trim();
+      if (query.isNotEmpty) {
+        setState(() => _isSearching = true);
+        final bloc = context.read<BookBlocOptimizedV2>();
+        bloc.add(SearchBooksEvent(query));
+        _addToHistory(query);
+      } else {
+        setState(() => _isSearching = false);
+      }
+    });
+  }
+
+  void _onSubmitted(String value) {
+    final query = value.trim();
     if (query.isNotEmpty) {
+      setState(() => _isSearching = true);
       final bloc = context.read<BookBlocOptimizedV2>();
       bloc.add(SearchBooksEvent(query));
+      _addToHistory(query);
     }
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    setState(() {
+      _isSearching = false;
+      _showHistory = true;
+    });
+  }
+
+  void _onFocusChange(bool hasFocus) {
+    setState(() {
+      _showHistory = hasFocus && _searchController.text.isEmpty;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isLargeScreen = MediaQuery.of(context).size.width > 600;
+    final focusNode = FocusNode();
 
     return Scaffold(
       appBar: AppBar(
@@ -57,148 +121,210 @@ class _SearchPageState extends State<SearchPage> {
           // Search Bar
           Padding(
             padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search for books...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+            child: Focus(
+              onFocusChange: _onFocusChange,
+              child: TextField(
+                controller: _searchController,
+                onSubmitted: _onSubmitted,
+                decoration: InputDecoration(
+                  hintText: 'Search for books...',
+                  prefixIcon: _isSearching
+                      ? Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        )
+                      : const Icon(Icons.search),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: _clearSearch,
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: theme.colorScheme.surfaceVariant,
                 ),
-                filled: true,
-                fillColor: theme.colorScheme.surfaceVariant,
               ),
             ),
           ),
-          // Search Results
-          Expanded(
-            child: BlocBuilder<BookBlocOptimizedV2, BookState>(
-              builder: (context, state) {
-                if (_searchController.text.trim().isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+          // Search History
+          if (_showHistory && _history.isNotEmpty)
+            Expanded(
+              child: ListView(
+                children: [
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Icon(
-                          Icons.search,
-                          size: 64,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Search for your favorite books',
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Enter a title, author, or subject',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                        Text('Recent Searches',
+                            style: theme.textTheme.titleSmall),
+                        TextButton(
+                          onPressed: _clearHistory,
+                          child: const Text('Clear'),
                         ),
                       ],
                     ),
-                  );
-                }
-
-                if (state.isLoading) {
-                  return const ModernLoadingIndicator();
-                }
-
-                if (state.error != null) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: theme.colorScheme.error,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Search failed',
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          state.error!,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                if (state.books.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.search_off,
-                          size: 64,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No books found',
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Try a different search term',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return isLargeScreen
-                    ? GridView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          mainAxisSpacing: 16,
-                          crossAxisSpacing: 16,
-                          childAspectRatio: 0.65,
-                        ),
-                        itemCount: state.books.length,
-                        itemBuilder: (context, index) {
-                          final book = state.books[index];
-                          return BookCard(
-                            book: book,
-                            onTap: () {
-                              context.go('/book/${book.id}');
-                            },
-                          );
+                  ),
+                  ..._history.map((q) => ListTile(
+                        leading: const Icon(Icons.history),
+                        title: Text(q),
+                        onTap: () {
+                          _searchController.text = q;
+                          _onSubmitted(q);
+                          setState(() => _showHistory = false);
                         },
-                      )
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: state.books.length,
-                        itemBuilder: (context, index) {
-                          final book = state.books[index];
-                          return BookCard(
-                            book: book,
-                            onTap: () {
-                              context.go('/book/${book.id}');
-                            },
-                          );
-                        },
-                      );
-              },
+                      )),
+                ],
+              ),
             ),
-          ),
+          if (!_showHistory)
+            // Search Results
+            Expanded(
+              child: BlocConsumer<BookBlocOptimizedV2, BookState>(
+                listener: (context, state) {
+                  if (!state.isLoading) {
+                    setState(() => _isSearching = false);
+                  }
+                },
+                builder: (context, state) {
+                  if (_searchController.text.trim().isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search,
+                            size: 64,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Search for your favorite books',
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Enter a title, author, or subject',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  if (state.isLoading) {
+                    return const ModernLoadingIndicator();
+                  }
+
+                  if (state.error != null) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: theme.colorScheme.error,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Search failed',
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            state.error!,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  if (state.books.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 64,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No books found',
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Try a different search term',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return isLargeScreen
+                      ? GridView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            mainAxisSpacing: 16,
+                            crossAxisSpacing: 16,
+                            childAspectRatio: 0.65,
+                          ),
+                          itemCount: state.books.length,
+                          itemBuilder: (context, index) {
+                            final book = state.books[index];
+                            return BookCard(
+                              book: book,
+                              onTap: () {
+                                context.go('/book/${book.id}',
+                                    extra: {'fromSearch': true});
+                              },
+                            );
+                          },
+                        )
+                      : ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: state.books.length,
+                          itemBuilder: (context, index) {
+                            final book = state.books[index];
+                            return BookCard(
+                              book: book,
+                              onTap: () {
+                                context.go('/book/${book.id}',
+                                    extra: {'fromSearch': true});
+                              },
+                            );
+                          },
+                        );
+                },
+              ),
+            ),
         ],
       ),
     );

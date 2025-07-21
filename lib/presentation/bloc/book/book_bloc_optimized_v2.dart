@@ -37,6 +37,7 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
   final Map<String, CachedBookData> _booksByCategoryCache = {};
   final Map<String, String> _bookContentCache = {};
   final Map<int, Book> _bookDetailsCache = {};
+  int _searchToken = 0;
 
   // Cache configuration
   static const Duration _cacheValidityDuration = Duration(hours: 24);
@@ -251,12 +252,18 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
       return;
     }
     emit(state.copyWith(isLoading: true, error: null));
+    final currentToken = ++_searchToken;
     try {
       final books = await _searchBooks(event.query);
-      emit(state.copyWith(books: books, isLoading: false, error: null));
+      // Only show results if this is the latest search
+      if (currentToken == _searchToken) {
+        emit(state.copyWith(books: books, isLoading: false, error: null));
+      }
     } catch (e) {
       final errorMessage = _getUserFriendlyError(e.toString());
-      emit(state.copyWith(isLoading: false, error: errorMessage));
+      if (currentToken == _searchToken) {
+        emit(state.copyWith(isLoading: false, error: errorMessage));
+      }
     }
   }
 
