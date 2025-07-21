@@ -258,4 +258,14 @@ class BookRepositoryOptimized implements BookRepository, ReadingRepository {
           'getCurrentlyReadingBooks is not implemented for this localDataSource');
     }
   }
+
+  @override
+  Future<void> removeFromLibrary(int bookId) async {
+    if (localDataSource is ReadingRepository) {
+      await (localDataSource as dynamic).removeFromLibrary(bookId);
+    } else {
+      throw UnimplementedError(
+          'removeFromLibrary is not implemented for this localDataSource');
+    }
+  }
 }

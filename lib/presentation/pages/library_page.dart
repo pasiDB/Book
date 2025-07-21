@@ -116,13 +116,120 @@ class _LibraryPageState extends State<LibraryPage> {
               final book = state.currentlyReadingBooks[index];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: BookCard(
-                  book: book,
-                  onTap: () {
-                    context.go('/reader/${book.id}');
-                  },
-                  isInLibrary: true,
-                  showProgress: true,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () {
+                      context.go('/reader/${book.id}');
+                    },
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Book cover
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: SizedBox(
+                            width: 60,
+                            height: 90,
+                            child: book.coverUrl != null
+                                ? Image.network(
+                                    book.coverUrl!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            Container(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceVariant,
+                                      child: Icon(
+                                        Icons.book,
+                                        size: 32,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                      ),
+                                    ),
+                                  )
+                                : Container(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .surfaceVariant,
+                                    child: Icon(
+                                      Icons.book,
+                                      size: 32,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        // Book details
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                book.title,
+                                style: Theme.of(context).textTheme.titleMedium,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                book.author ?? '',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Remove button
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          tooltip: 'Remove from Library',
+                          onPressed: () async {
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Remove Book'),
+                                content: const Text(
+                                    'Are you sure you want to remove this book from your library?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(true),
+                                    child: const Text('Remove'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirmed == true) {
+                              context
+                                  .read<BookBlocOptimizedV2>()
+                                  .add(RemoveFromLibrary(book));
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               );
             },

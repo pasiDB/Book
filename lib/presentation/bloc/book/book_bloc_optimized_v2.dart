@@ -71,6 +71,7 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
     on<LoadCurrentlyReadingBooks>(_onLoadCurrentlyReadingBooks);
     on<LoadReadingProgress>(_onLoadReadingProgress);
     on<SaveReadingProgress>(_onSaveReadingProgress);
+    on<RemoveFromLibrary>(_onRemoveFromLibrary);
   }
 
   @override
@@ -534,6 +535,22 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
       emit(state.copyWith(
         error: 'Failed to save reading progress: $e',
       ));
+    }
+  }
+
+  Future<void> _onRemoveFromLibrary(
+    RemoveFromLibrary event,
+    Emitter<BookState> emit,
+  ) async {
+    try {
+      await _readingRepository.removeFromLibrary(event.book.id);
+      // Remove from in-memory state
+      final updatedBooks = state.currentlyReadingBooks
+          .where((b) => b.id != event.book.id)
+          .toList();
+      emit(state.copyWith(currentlyReadingBooks: updatedBooks));
+    } catch (e) {
+      emit(state.copyWith(error: 'Failed to remove book from library: $e'));
     }
   }
 

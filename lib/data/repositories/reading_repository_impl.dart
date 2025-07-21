@@ -153,4 +153,21 @@ class ReadingRepositoryImpl implements ReadingRepository {
       developer.log('Error adding to currently reading: $e');
     }
   }
+
+  Future<void> removeFromLibrary(int bookId) async {
+    try {
+      final currentlyReadingJson = _prefs.getString(_currentlyReadingKey);
+      List<int> currentlyReading = [];
+      if (currentlyReadingJson != null) {
+        currentlyReading = List<int>.from(json.decode(currentlyReadingJson));
+      }
+      currentlyReading.remove(bookId);
+      await _prefs.setString(
+          _currentlyReadingKey, json.encode(currentlyReading));
+      // Optionally, remove reading progress for this book
+      await _prefs.remove('${_progressKey}_$bookId');
+    } catch (e) {
+      developer.log('Error removing book from library: $e');
+    }
+  }
 }

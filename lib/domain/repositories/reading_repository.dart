@@ -8,4 +8,5 @@ abstract class ReadingRepository {
   Future<void> addBookmark(int bookId, int position);
   Future<void> removeBookmark(int bookId, int position);
   Future<List<ReadingProgress>> getCurrentlyReadingBooks();
+  Future<void> removeFromLibrary(int bookId);
 }
