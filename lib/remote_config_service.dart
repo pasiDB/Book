@@ -25,8 +25,8 @@ class RemoteConfigService {
     try {
       await _remoteConfig.fetchAndActivate();
       debugPrint('Remote Config fetched and activated');
-      debugPrint('Raw URL value: ${_remoteConfig.getString('url')}');
-      debugPrint('Parsed actual URL: ${actualUrl}');
+      debugPrint('Raw URL value: $rawUrlJson');
+      debugPrint('Parsed actual URL: $actualUrl');
     } catch (e, st) {
       debugPrint('Remote Config fetch failed: $e\n$st');
     }
@@ -52,8 +52,8 @@ class RemoteConfigService {
     try {
       await _remoteConfig.fetchAndActivate();
       debugPrint('Remote Config manually fetched and activated');
-      debugPrint('Raw URL value: ${_remoteConfig.getString('url')}');
-      debugPrint('Parsed actual URL: ${actualUrl}');
+      debugPrint('Raw URL value: $rawUrlJson');
+      debugPrint('Parsed actual URL: $actualUrl');
     } catch (e, st) {
       debugPrint('Manual fetch failed: $e\n$st');
     }

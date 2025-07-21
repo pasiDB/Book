@@ -7,7 +7,6 @@ import '../bloc/book/book_bloc_optimized_v2.dart';
 import '../bloc/book/book_event.dart';
 import '../bloc/book/book_state.dart';
 import '../widgets/modern_loading_indicator.dart';
-import '../../core/constants/app_constants.dart';
 
 class BookReaderPage extends StatefulWidget {
   final int bookId;
@@ -26,7 +25,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
   bool _isProcessingContent = false;
   double _fontSize = 16.0;
   double _lineHeight = 1.6;
-  EdgeInsets _pagePadding = const EdgeInsets.all(20.0);
+  final EdgeInsets _pagePadding = const EdgeInsets.all(16.0);
 
   @override
   void initState() {
@@ -103,11 +102,6 @@ class _BookReaderPageState extends State<BookReaderPage> {
   }
 
   static List<String> _splitContentIntoPages(_SplitContentParams params) {
-    final textStyle = TextStyle(
-      fontSize: params.fontSize,
-      height: params.lineHeight,
-    );
-
     final availableWidth = params.pageSize.width -
         (params.pagePadding.left + params.pagePadding.right);
     final availableHeight = params.pageSize.height -
@@ -290,8 +284,6 @@ class _BookReaderPageState extends State<BookReaderPage> {
           if (state.selectedBook == null) {
             return const ModernLoadingIndicator();
           }
-
-          final book = state.selectedBook!;
 
           // If no content loaded yet, load it
           if (state.bookContentChunks.isEmpty) {

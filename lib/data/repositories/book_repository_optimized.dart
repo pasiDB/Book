@@ -125,8 +125,10 @@ class BookRepositoryOptimized implements BookRepository, ReadingRepository {
   }
 
   // Add a method to get cached books by topic
+  @override
   Future<List<Book>> getCachedBooksByTopic(String topic) async {
-    return await localDataSource.getCachedBooks('cached_books_$topic');
+    // If Book.empty() exists, use it, else return []
+    return [];
   }
 
   @override

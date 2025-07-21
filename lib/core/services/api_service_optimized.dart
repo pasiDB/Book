@@ -11,7 +11,6 @@ class ApiServiceOptimized {
 
   static const Duration _cacheExpiry = Duration(minutes: 30);
   static const int _maxConcurrentRequests = 5;
-  static const Duration _requestTimeout = Duration(seconds: 15);
 
   // Connection pool
   final List<Dio> _connectionPool = [];
@@ -146,11 +145,9 @@ class ApiServiceOptimized {
       _pendingRequests.remove(cacheKey);
       rethrow;
     } catch (e) {
-      developer.log('❌ Unexpected error for $path: $e');
       final apiException = ApiException('Unexpected error: $e');
       completer.completeError(apiException);
-      _pendingRequests.remove(cacheKey);
-      rethrow;
+      throw apiException;
     }
   }
 

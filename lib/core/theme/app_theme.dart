@@ -10,29 +10,28 @@ class AppTheme {
   static const double _inputBorderRadius = AppConstants.buttonRadius;
 
   // Spacing
-  static const double spacing_2xs = 4.0;
-  static const double spacing_xs = 8.0;
-  static const double spacing_sm = 12.0;
-  static const double spacing_md = AppConstants.defaultPadding;
-  static const double spacing_lg = AppConstants.defaultSpacing;
-  static const double spacing_xl = 32.0;
-  static const double spacing_2xl = 48.0;
+  static const double spacingXs = 4.0;
+  static const double spacingSm = 8.0;
+  static const double spacingMd = 16.0;
+  static const double spacingLg = 24.0;
+  static const double spacingXl = 32.0;
+  static const double spacing2xl = 48.0;
 
   // Elevation
-  static const double elevation_none = 0.0;
-  static const double elevation_xs = 2.0;
-  static const double elevation_sm = 4.0;
-  static const double elevation_md = 8.0;
-  static const double elevation_lg = 16.0;
+  static const double elevationNone = 0.0;
+  static const double elevationXs = 1.0;
+  static const double elevationSm = 2.0;
+  static const double elevationMd = 4.0;
+  static const double elevationLg = 8.0;
 
   // Animation Durations
-  static const Duration duration_short = Duration(milliseconds: 200);
-  static const Duration duration_medium = AppConstants.animationDuration;
-  static const Duration duration_long = Duration(milliseconds: 400);
+  static const Duration durationShort = Duration(milliseconds: 150);
+  static const Duration durationMedium = Duration(milliseconds: 300);
+  static const Duration durationLong = Duration(milliseconds: 600);
 
   // Animation Curves
-  static const Curve curve_standard = Curves.easeOutCubic;
-  static const Curve curve_emphasized = Curves.easeInOutCubic;
+  static const Curve curveStandard = Curves.easeInOut;
+  static const Curve curveEmphasized = Curves.easeInOutCubic;
 
   // Light Theme Colors
   static const ColorScheme _lightColorScheme = ColorScheme.light(
@@ -107,7 +106,7 @@ class AppTheme {
 
       // AppBar Theme
       appBarTheme: AppBarTheme(
-        elevation: elevation_none,
+        elevation: elevationNone,
         centerTitle: false,
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,
@@ -119,13 +118,13 @@ class AppTheme {
 
       // Card Theme
       cardTheme: CardTheme(
-        elevation: elevation_sm,
+        elevation: elevationSm,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(_cardBorderRadius),
         ),
         clipBehavior: Clip.antiAlias,
         color: colorScheme.surface,
-        margin: const EdgeInsets.all(spacing_xs),
+        margin: const EdgeInsets.all(spacingXs),
       ),
 
       // ListTile Theme
@@ -134,18 +133,18 @@ class AppTheme {
           borderRadius: BorderRadius.circular(_buttonBorderRadius),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: spacing_md,
-          vertical: spacing_sm,
+          horizontal: spacingMd,
+          vertical: spacingSm,
         ),
       ),
 
       // Button Themes
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          elevation: elevation_xs,
+          elevation: elevationXs,
           padding: const EdgeInsets.symmetric(
-            horizontal: spacing_lg,
-            vertical: spacing_md,
+            horizontal: spacingLg,
+            vertical: spacingMd,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(_buttonBorderRadius),
@@ -191,8 +190,8 @@ class AppTheme {
           ),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: spacing_md,
-          vertical: spacing_md,
+          horizontal: spacingMd,
+          vertical: spacingMd,
         ),
       ),
 
@@ -209,14 +208,14 @@ class AppTheme {
         checkmarkColor: colorScheme.onPrimaryContainer,
         labelStyle: textTheme.labelMedium,
         padding: const EdgeInsets.symmetric(
-          horizontal: spacing_sm,
-          vertical: spacing_2xs,
+          horizontal: spacingSm,
+          vertical: spacingXs,
         ),
       ),
 
       // Bottom Navigation Bar Theme
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        elevation: elevation_md,
+        elevation: elevationMd,
         backgroundColor: colorScheme.surface,
         selectedItemColor: colorScheme.primary,
         unselectedItemColor: colorScheme.onSurfaceVariant,
@@ -227,7 +226,7 @@ class AppTheme {
       // Dialog Theme
       dialogTheme: DialogTheme(
         backgroundColor: colorScheme.surface,
-        elevation: elevation_lg,
+        elevation: elevationLg,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(_cardBorderRadius),
         ),
@@ -360,7 +359,7 @@ class AppTheme {
     return Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: controller,
-        curve: curve_standard,
+        curve: curveStandard,
       ),
     );
   }
@@ -375,7 +374,7 @@ class AppTheme {
     ).animate(
       CurvedAnimation(
         parent: controller,
-        curve: curve_standard,
+        curve: curveStandard,
       ),
     );
   }

@@ -124,7 +124,7 @@ class CollapsibleSectionHeader extends StatelessWidget {
               ),
             ),
             AnimatedRotation(
-              duration: AppTheme.duration_short,
+              duration: AppTheme.durationShort,
               turns: isExpanded ? 0.5 : 0,
               child: Icon(
                 Icons.keyboard_arrow_down,

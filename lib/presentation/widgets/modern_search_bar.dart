@@ -41,7 +41,7 @@ class _ModernSearchBarState extends State<ModernSearchBar>
     _focusNode = widget.focusNode ?? FocusNode();
 
     _animationController = AnimationController(
-      duration: AppTheme.duration_short,
+      duration: AppTheme.durationShort,
       vsync: this,
     );
 

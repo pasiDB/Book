@@ -143,16 +143,6 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
     }
   }
 
-  Future<void> _loadCacheFromStorage() async {
-    try {
-      // Load from persistent storage
-      // This would require injecting SharedPreferences into the BLoC
-      developer.log('Cache loaded from storage');
-    } catch (e) {
-      developer.log('Failed to load cache: $e');
-    }
-  }
-
   Future<void> _onLoadBooksByTopic(
     LoadBooksByTopic event,
     Emitter<BookState> emit,

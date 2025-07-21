@@ -91,7 +91,7 @@ class CacheServiceOptimized {
 
       return value as T;
     } catch (e) {
-      print('Error reading from persistent cache: $e');
+      developer.log('Error reading from persistent cache: $e');
       await _prefs.remove(key);
       return null;
     }
@@ -117,7 +117,7 @@ class CacheServiceOptimized {
       // Clean up if cache is too large
       await _cleanupPersistentCache();
     } catch (e) {
-      print('Error writing to persistent cache: $e');
+      developer.log('Error writing to persistent cache: $e');
     }
   }
 
@@ -139,6 +139,7 @@ class CacheServiceOptimized {
       return persistentValue;
     }
 
+    developer.log('Cache miss for key: $key');
     return null;
   }
 
@@ -163,6 +164,7 @@ class CacheServiceOptimized {
         await _prefs.remove(key);
       }
     }
+    developer.log('Cache cleared');
   }
 
   Future<void> clearByPrefix(String prefix) async {

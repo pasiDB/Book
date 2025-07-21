@@ -97,7 +97,6 @@ class SplashScreenHiveOptimized extends StatefulWidget {
 }
 
 class _SplashScreenHiveOptimizedState extends State<SplashScreenHiveOptimized> {
-  double _progress = 0.0;
   bool _loadingDone = false;
 
   @override
@@ -110,12 +109,9 @@ class _SplashScreenHiveOptimizedState extends State<SplashScreenHiveOptimized> {
     final bookBloc = DependencyInjectionHive.bookBloc;
     await bookBloc.loadDefaultCategoryAndSetState();
     setState(() {
-      _progress = 1.0;
-    });
-    await Future.delayed(const Duration(milliseconds: 300));
-    setState(() {
       _loadingDone = true;
     });
+    await Future.delayed(const Duration(milliseconds: 300));
     // Start preloading other categories in the background
     bookBloc.preloadOtherCategoriesInBackground();
   }

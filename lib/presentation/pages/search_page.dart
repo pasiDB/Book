@@ -107,7 +107,6 @@ class _SearchPageState extends State<SearchPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isLargeScreen = MediaQuery.of(context).size.width > 600;
-    final focusNode = FocusNode();
 
     return Scaffold(
       appBar: AppBar(

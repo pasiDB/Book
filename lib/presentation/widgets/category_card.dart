@@ -37,7 +37,7 @@ class CategoryCard extends StatelessWidget {
         : colorScheme.onSurfaceVariant;
 
     return AnimatedContainer(
-      duration: AppTheme.duration_short,
+      duration: AppTheme.durationShort,
       curve: Curves.easeOut,
       decoration: BoxDecoration(
         color: isSelected ? colorScheme.primaryContainer : cardColor,

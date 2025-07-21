@@ -53,7 +53,7 @@ class ModernBottomBar extends StatelessWidget {
                       children: [
                         // Icon with background
                         AnimatedContainer(
-                          duration: AppTheme.duration_short,
+                          duration: AppTheme.durationShort,
                           curve: Curves.easeOutBack,
                           padding: const EdgeInsets.all(8),
                           decoration: isSelected
@@ -63,7 +63,7 @@ class ModernBottomBar extends StatelessWidget {
                                 )
                               : null,
                           child: AnimatedScale(
-                            duration: AppTheme.duration_short,
+                            duration: AppTheme.durationShort,
                             scale: isSelected ? 1.2 : 1.0,
                             curve: Curves.easeOutBack,
                             child: Icon(

@@ -57,7 +57,6 @@ class ReadingRepositoryImpl implements ReadingRepository {
   Future<void> updateCurrentPosition(
       int bookId, int position, double progress, double scrollOffset) async {
     try {
-      final existingProgress = await getReadingProgress(bookId);
       final updatedProgress = ReadingProgress(
         bookId: bookId,
         progress: progress,
@@ -154,6 +153,7 @@ class ReadingRepositoryImpl implements ReadingRepository {
     }
   }
 
+  @override
   Future<void> removeFromLibrary(int bookId) async {
     try {
       final currentlyReadingJson = _prefs.getString(_currentlyReadingKey);
