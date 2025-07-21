@@ -130,6 +130,8 @@ class _LibraryPageState extends State<LibraryPage> {
                         width: double.infinity,
                         height: 100,
                         margin: EdgeInsets.zero,
+                        libraryIconSize: 18,
+                        libraryIconPadding: 2,
                       ),
                     ),
                     IconButton(

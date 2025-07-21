@@ -11,6 +11,8 @@ class BookCard extends StatelessWidget {
   final double height;
   final EdgeInsetsGeometry? margin;
   final bool showProgress;
+  final double? libraryIconSize;
+  final double? libraryIconPadding;
 
   const BookCard({
     super.key,
@@ -21,6 +23,8 @@ class BookCard extends StatelessWidget {
     this.height = 160, // Reduced from 200
     this.margin = const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
     this.showProgress = false,
+    this.libraryIconSize,
+    this.libraryIconPadding,
   });
 
   @override
@@ -99,11 +103,10 @@ class BookCard extends StatelessWidget {
                 // Library Badge
                 if (isInLibrary)
                   Positioned(
-                    top: 6, // Increased from 4
-                    right: 6, // Increased from 4
+                    top: 6,
+                    right: 6,
                     child: Container(
-                      padding:
-                          const EdgeInsets.all(AppConstants.defaultPadding),
+                      padding: EdgeInsets.all(libraryIconPadding ?? 6),
                       decoration: BoxDecoration(
                         color: colorScheme.primaryContainer,
                         borderRadius:
@@ -111,7 +114,7 @@ class BookCard extends StatelessWidget {
                       ),
                       child: Icon(
                         Icons.book,
-                        size: 14, // Increased from 12
+                        size: libraryIconSize ?? 14,
                         color: colorScheme.onPrimaryContainer,
                       ),
                     ),
