@@ -310,6 +310,12 @@ class _GlobalWebViewWrapperState extends State<GlobalWebViewWrapper> {
       setState(() {
         _url = newUrl;
       });
+    } else if ((newUrl == null || newUrl.isEmpty) &&
+        _url != null &&
+        _url!.isNotEmpty) {
+      setState(() {
+        _url = null;
+      });
     }
   }
 
