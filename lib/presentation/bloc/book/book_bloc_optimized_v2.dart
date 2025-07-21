@@ -467,10 +467,22 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
   ) async {
     try {
       final progressList = await _readingRepository.getCurrentlyReadingBooks();
-      final books = state.books.where((book) {
-        return progressList.any((progress) => progress.bookId == book.id);
-      }).toList();
-
+      // Fetch full book details for each ID
+      final List<Book> books = [];
+      for (final progress in progressList) {
+        Book? book = _bookDetailsCache[progress.bookId];
+        if (book == null) {
+          // Try to find in state.books (current search/category)
+          book = _firstWhereOrNull(state.books, (b) => b.id == progress.bookId);
+        }
+        if (book == null) {
+          // Fetch from repository (cache or API)
+          book = await _bookRepository.getBookById(progress.bookId);
+        }
+        if (book != null) {
+          books.add(book);
+        }
+      }
       emit(state.copyWith(
         currentlyReadingBooks: books,
         error: null,
@@ -588,5 +600,12 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
     } else {
       return AppConstants.errorUnexpected;
     }
+  }
+
+  Book? _firstWhereOrNull(List<Book> books, bool Function(Book) test) {
+    for (final b in books) {
+      if (test(b)) return b;
+    }
+    return null;
   }
 }

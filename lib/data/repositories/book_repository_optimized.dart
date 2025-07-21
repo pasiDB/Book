@@ -250,7 +250,12 @@ class BookRepositoryOptimized implements BookRepository, ReadingRepository {
 
   @override
   Future<List<ReadingProgress>> getCurrentlyReadingBooks() async {
-    // Not implemented for now
-    return [];
+    if (localDataSource is ReadingRepository) {
+      return await (localDataSource as ReadingRepository)
+          .getCurrentlyReadingBooks();
+    } else {
+      throw UnimplementedError(
+          'getCurrentlyReadingBooks is not implemented for this localDataSource');
+    }
   }
 }

@@ -133,27 +133,27 @@ class _SplashScreenHiveOptimizedState extends State<SplashScreenHiveOptimized> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const ModernLoadingIndicator(),
+            AnimatedOpacity(
+              opacity: 1.0,
+              duration: const Duration(milliseconds: 800),
+              child: Column(
+                children: [
+                  // Logo
+                  Image.asset(
+                    'assets/images/app_icon.png',
+                    width: 120,
+                    height: 120,
+                  ),
+                  const SizedBox(height: 32),
+                  // Animated dots
+                  const ModernLoadingIndicator(),
+                ],
+              ),
+            ),
             const SizedBox(height: 32),
             Text(
               'Loading your library...',
               style: theme.textTheme.titleLarge,
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: 200,
-              child: LinearProgressIndicator(
-                value: _progress,
-                minHeight: 8,
-                backgroundColor: theme.colorScheme.surface,
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              '${(_progress * 100).toInt()}%',
-              style: theme.textTheme.bodyMedium,
             ),
           ],
         ),

@@ -124,27 +124,6 @@ class BookLocalDataSourceHive implements BookLocalDataSource {
   }
 
   @override
-  Future<void> saveCurrentlyReadingBooks(List<BookModel> books) async {
-    final booksJson = books.map((book) => book.toJson()).toList();
-    await sharedPreferences.setString(
-        AppConstants.currentlyReadingKey, jsonEncode(booksJson));
-  }
-
-  @override
-  Future<List<BookModel>> getCurrentlyReadingBooks() async {
-    final booksString =
-        sharedPreferences.getString(AppConstants.currentlyReadingKey);
-    if (booksString != null) {
-      final booksJson = jsonDecode(booksString) as List<dynamic>;
-      return booksJson
-          .map((bookJson) =>
-              BookModel.fromJson(bookJson as Map<String, dynamic>))
-          .toList();
-    }
-    return [];
-  }
-
-  @override
   Future<void> saveReadingProgress(ReadingProgress progress) async {
     final key = 'reading_progress_${progress.bookId}';
     final data = {
