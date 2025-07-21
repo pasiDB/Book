@@ -342,24 +342,30 @@ class _BookReaderPageState extends State<BookReaderPage> {
 
               // Page content area
               Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  onPageChanged: _onPageChanged,
-                  itemCount: _pages.length,
-                  itemBuilder: (context, index) {
-                    return Container(
-                      padding: _pagePadding,
-                      child: SingleChildScrollView(
-                        child: Text(
-                          _pages[index],
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            height: _lineHeight,
-                            fontSize: _fontSize,
+                child: Scrollbar(
+                  thumbVisibility: true,
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: _onPageChanged,
+                    itemCount: _pages.length,
+                    itemBuilder: (context, index) {
+                      return Container(
+                        padding: _pagePadding,
+                        child: Scrollbar(
+                          thumbVisibility: true,
+                          child: SingleChildScrollView(
+                            child: Text(
+                              _pages[index],
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                height: _lineHeight,
+                                fontSize: _fontSize,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
 
@@ -447,71 +453,104 @@ class _BookReaderPageState extends State<BookReaderPage> {
   void _showReadingSettings(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Reading Settings',
-              style: Theme.of(context).textTheme.titleLarge,
+      builder: (context) {
+        double tempFontSize = _fontSize;
+        double tempLineHeight = _lineHeight;
+        return StatefulBuilder(
+          builder: (context, setModalState) => Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Reading Settings',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Font Size',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Row(
+                  children: [
+                    const Text('A', style: TextStyle(fontSize: 14)),
+                    Expanded(
+                      child: Slider(
+                        value: tempFontSize,
+                        min: 12.0,
+                        max: 24.0,
+                        divisions: 12,
+                        label: tempFontSize.round().toString(),
+                        onChanged: (value) {
+                          setModalState(() => tempFontSize = value);
+                        },
+                      ),
+                    ),
+                    const Text('A', style: TextStyle(fontSize: 24)),
+                  ],
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '${tempFontSize.round()} px',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Line Height',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Row(
+                  children: [
+                    const Text('1.2', style: TextStyle(fontSize: 14)),
+                    Expanded(
+                      child: Slider(
+                        value: tempLineHeight,
+                        min: 1.2,
+                        max: 2.0,
+                        divisions: 8,
+                        label: tempLineHeight.toStringAsFixed(1),
+                        onChanged: (value) {
+                          setModalState(() => tempLineHeight = value);
+                        },
+                      ),
+                    ),
+                    const Text('2.0', style: TextStyle(fontSize: 18)),
+                  ],
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    tempLineHeight.toStringAsFixed(1),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _fontSize = tempFontSize;
+                        _lineHeight = tempLineHeight;
+                      });
+                      // Recalculate pages with new settings
+                      final state = context.read<BookBlocOptimizedV2>().state;
+                      if (state.bookContentChunks.isNotEmpty) {
+                        _processContent(state, MediaQuery.of(context).size);
+                      }
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Done'),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            Text(
-              'Font Size',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            Slider(
-              value: _fontSize,
-              min: 12.0,
-              max: 24.0,
-              divisions: 12,
-              label: _fontSize.round().toString(),
-              onChanged: (value) {
-                setState(() {
-                  _fontSize = value;
-                });
-                // Recalculate pages with new font size
-                final state = context.read<BookBlocOptimizedV2>().state;
-                if (state.bookContentChunks.isNotEmpty) {
-                  _processContent(state, MediaQuery.of(context).size);
-                }
-              },
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Line Height',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            Slider(
-              value: _lineHeight,
-              min: 1.2,
-              max: 2.0,
-              divisions: 8,
-              label: _lineHeight.toStringAsFixed(1),
-              onChanged: (value) {
-                setState(() {
-                  _lineHeight = value;
-                });
-                // Recalculate pages with new line height
-                final state = context.read<BookBlocOptimizedV2>().state;
-                if (state.bookContentChunks.isNotEmpty) {
-                  _processContent(state, MediaQuery.of(context).size);
-                }
-              },
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Done'),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
