@@ -18,7 +18,7 @@ class BookReaderPage extends StatefulWidget {
 }
 
 class _BookReaderPageState extends State<BookReaderPage> {
-  final PageController _pageController = PageController();
+  PageController? _pageController;
   int _currentPageIndex = 0;
   List<String> _pages = [];
   bool _isLoadingMore = false;
@@ -39,7 +39,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
 
   @override
   void dispose() {
-    _pageController.dispose();
+    _pageController?.dispose();
     super.dispose();
   }
 
@@ -163,7 +163,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
 
   void _goToNextPage() {
     if (_currentPageIndex < _pages.length - 1) {
-      _pageController.nextPage(
+      _pageController?.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
@@ -174,7 +174,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
 
   void _goToPreviousPage() {
     if (_currentPageIndex > 0) {
-      _pageController.previousPage(
+      _pageController?.previousPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
@@ -225,6 +225,16 @@ class _BookReaderPageState extends State<BookReaderPage> {
       ),
       body: BlocConsumer<BookBlocOptimizedV2, BookState>(
         listener: (context, state) {
+          // Reset progress and pages when a new book is loaded
+          if (state.selectedBook != null &&
+              (_pages.isNotEmpty && state.selectedBook!.id != widget.bookId)) {
+            setState(() {
+              _pages.clear();
+              _currentPageIndex = 0;
+              _isProcessingContent = false;
+            });
+          }
+
           // Clear pages when book content is cleared (new book loaded)
           if (state.bookContentChunks.isEmpty && _pages.isNotEmpty) {
             setState(() {
@@ -240,8 +250,8 @@ class _BookReaderPageState extends State<BookReaderPage> {
               _currentPageIndex = state.readingProgress!.currentPosition;
             });
             // Restore page position if pages are loaded
-            if (_pages.isNotEmpty && _pageController.hasClients) {
-              _pageController.jumpToPage(_currentPageIndex);
+            if (_pages.isNotEmpty && _pageController?.hasClients == true) {
+              _pageController!.jumpToPage(_currentPageIndex);
             }
           }
 
@@ -249,7 +259,9 @@ class _BookReaderPageState extends State<BookReaderPage> {
           if (state.bookContentChunks.isNotEmpty &&
               _pages.isEmpty &&
               !_isProcessingContent) {
-            _processContent(state, screenSize);
+            _processContent(state, screenSize,
+                jumpToPage: true,
+                pageIndex: state.readingProgress?.currentPosition ?? 0);
           }
         },
         builder: (context, state) {
@@ -416,7 +428,8 @@ class _BookReaderPageState extends State<BookReaderPage> {
     );
   }
 
-  void _processContent(BookState state, Size screenSize) async {
+  void _processContent(BookState state, Size screenSize,
+      {bool jumpToPage = false, int? pageIndex}) async {
     setState(() {
       _isProcessingContent = true;
     });
@@ -425,10 +438,23 @@ class _BookReaderPageState extends State<BookReaderPage> {
       final content = state.bookContentChunks.join('\n\n');
       final pages = await _splitContentIntoPagesAsync(content, screenSize);
 
+      int targetPage = 0;
+      if (jumpToPage) {
+        if (pageIndex != null) {
+          targetPage = pageIndex;
+        } else if (state.readingProgress != null) {
+          targetPage = state.readingProgress!.currentPosition;
+        }
+      }
+      // Dispose old controller and create a new one with correct initialPage
+      _pageController?.dispose();
+      _pageController = PageController(
+          initialPage: (targetPage < pages.length) ? targetPage : 0);
       if (mounted) {
         setState(() {
           _pages = pages;
           _isProcessingContent = false;
+          _currentPageIndex = (targetPage < pages.length) ? targetPage : 0;
         });
       }
     } catch (e) {
@@ -547,11 +573,14 @@ class _BookReaderPageState extends State<BookReaderPage> {
                       setState(() {
                         _fontSize = tempFontSize;
                         _lineHeight = tempLineHeight;
+                        _currentPageIndex =
+                            0; // Reset to first page on settings change
                       });
                       // Recalculate pages with new settings
                       final state = context.read<BookBlocOptimizedV2>().state;
                       if (state.bookContentChunks.isNotEmpty) {
-                        _processContent(state, MediaQuery.of(context).size);
+                        _processContent(state, MediaQuery.of(context).size,
+                            jumpToPage: true, pageIndex: 0);
                       }
                       Navigator.of(context).pop();
                     },
