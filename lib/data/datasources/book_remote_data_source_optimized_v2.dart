@@ -82,7 +82,27 @@ class BookRemoteDataSourceOptimizedImpl
       );
 
       final apiResponse = ApiResponseModel.fromJson(response);
-      return apiResponse.results;
+      final lowerQuery = query.toLowerCase();
+      final exactTitle = <BookModel>[];
+      final partialTitle = <BookModel>[];
+      final authorMatch = <BookModel>[];
+      final others = <BookModel>[];
+      final seen = <int>{};
+
+      for (final book in apiResponse.results) {
+        final title = book.title.toLowerCase();
+        final author = (book.author ?? '').toLowerCase();
+        if (title == lowerQuery) {
+          if (seen.add(book.id)) exactTitle.add(book);
+        } else if (title.contains(lowerQuery)) {
+          if (seen.add(book.id)) partialTitle.add(book);
+        } else if (author.contains(lowerQuery)) {
+          if (seen.add(book.id)) authorMatch.add(book);
+        } else {
+          if (seen.add(book.id)) others.add(book);
+        }
+      }
+      return [...exactTitle, ...partialTitle, ...authorMatch, ...others];
     } catch (e) {
       print('Error searching books: $e');
       rethrow;
