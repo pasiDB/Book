@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "614725527374",
+    "project_id": "theshelf-e0726",
+    "storage_bucket": "theshelf-e0726.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:614725527374:android:b02f7f47fbcb9d52b8601f",
+        "android_client_info": {
+          "package_name": "com.bookreader.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCTn4h3-ilam3iQmWplwTD7NZ6Br_QZadI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
