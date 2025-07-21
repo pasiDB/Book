@@ -255,11 +255,16 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             const SizedBox(height: 16),
             _buildInfoRow('Version', '1.0.0', theme),
-            _buildInfoRow('Build', '1', theme),
-            _buildInfoRow('Platform', 'Flutter', theme),
             const SizedBox(height: 16),
             Text(
               'A modern book reading app with a vast collection of free books from Project Gutenberg.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'This app only displays books marked as public domain in the USA using the copyright=false flag from the Gutendex API. It excludes copyrighted or unverified material to ensure legal and safe distribution.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

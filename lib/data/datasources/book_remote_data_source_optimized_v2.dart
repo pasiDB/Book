@@ -35,7 +35,7 @@ class BookRemoteDataSourceOptimizedImpl
       // Fetch from API with retry
       final response = await _apiService.getWithRetry<Map<String, dynamic>>(
         '/books/',
-        queryParameters: {'topic': topic},
+        queryParameters: {'topic': topic, 'copyright': false},
         useCache: true,
       );
 
@@ -77,7 +77,7 @@ class BookRemoteDataSourceOptimizedImpl
     try {
       final response = await _apiService.getWithRetry<Map<String, dynamic>>(
         '/books/',
-        queryParameters: {'search': query},
+        queryParameters: {'search': query, 'copyright': false},
         useCache: true,
       );
 
@@ -100,6 +100,7 @@ class BookRemoteDataSourceOptimizedImpl
 
       final response = await _apiService.getWithRetry<Map<String, dynamic>>(
         '/books/$id/',
+        queryParameters: {'copyright': false},
         useCache: true,
       );
 
@@ -150,7 +151,7 @@ class BookRemoteDataSourceOptimizedImpl
     try {
       final response = await _apiService.getWithRetry<Map<String, dynamic>>(
         '/books/',
-        queryParameters: {'page': page},
+        queryParameters: {'page': page, 'copyright': false},
         useCache: true,
       );
 
