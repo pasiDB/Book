@@ -119,7 +119,7 @@ class _LibraryPageState extends State<LibraryPage> {
                 child: BookCard(
                   book: book,
                   onTap: () {
-                    context.go('/book/${book.id}');
+                    context.go('/reader/${book.id}');
                   },
                   isInLibrary: true,
                   showProgress: true,

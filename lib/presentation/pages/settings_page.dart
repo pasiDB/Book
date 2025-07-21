@@ -10,37 +10,7 @@ class SettingsPage extends StatefulWidget {
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(
-        CurvedAnimation(parent: _animationController, curve: Curves.easeOut));
-
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
+class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -49,43 +19,34 @@ class _SettingsPageState extends State<SettingsPage>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
-        elevation: 0,
-        backgroundColor: theme.colorScheme.surface,
-        foregroundColor: theme.colorScheme.onSurface,
+        elevation: 1,
+        centerTitle: true,
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        titleTextStyle: theme.appBarTheme.titleTextStyle,
       ),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _buildSectionHeader('Appearance', Icons.palette, theme),
-              const SizedBox(height: 16),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _buildSectionHeader('Appearance', Icons.palette, theme),
+          const SizedBox(height: 16),
 
-              // Theme Settings Card
-              _buildThemeCard(settings, theme),
-              const SizedBox(height: 16),
+          // Theme Settings Card
+          _buildThemeCard(settings, theme),
+          const SizedBox(height: 24),
 
-              // Font Size Settings Card
-              _buildFontSizeCard(settings, theme),
-              const SizedBox(height: 24),
+          _buildSectionHeader('Data & Storage', Icons.storage, theme),
+          const SizedBox(height: 16),
 
-              _buildSectionHeader('Data & Storage', Icons.storage, theme),
-              const SizedBox(height: 16),
+          // Clear Data Card
+          _buildClearDataCard(theme),
+          const SizedBox(height: 24),
 
-              // Clear Data Card
-              _buildClearDataCard(theme),
-              const SizedBox(height: 24),
+          _buildSectionHeader('About', Icons.info_outline, theme),
+          const SizedBox(height: 16),
 
-              _buildSectionHeader('About', Icons.info_outline, theme),
-              const SizedBox(height: 16),
-
-              // About Card
-              _buildAboutCard(theme),
-            ],
-          ),
-        ),
+          // About Card
+          _buildAboutCard(theme),
+        ],
       ),
     );
   }
@@ -221,90 +182,6 @@ class _SettingsPageState extends State<SettingsPage>
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFontSizeCard(SettingsService settings, ThemeData theme) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.text_fields, color: theme.colorScheme.primary),
-                const SizedBox(width: 12),
-                Text(
-                  'Font Size',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Small',
-                      style: theme.textTheme.bodySmall,
-                    ),
-                    Text(
-                      'Large',
-                      style: theme.textTheme.bodyLarge,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    activeTrackColor: theme.colorScheme.primary,
-                    inactiveTrackColor:
-                        theme.colorScheme.primary.withOpacity(0.3),
-                    thumbColor: theme.colorScheme.primary,
-                    overlayColor: theme.colorScheme.primary.withOpacity(0.1),
-                    trackHeight: 4,
-                    thumbShape:
-                        const RoundSliderThumbShape(enabledThumbRadius: 8),
-                    overlayShape:
-                        const RoundSliderOverlayShape(overlayRadius: 16),
-                  ),
-                  child: Slider(
-                    value: settings.fontSize,
-                    min: AppConstants.minFontSize,
-                    max: AppConstants.maxFontSize,
-                    divisions: 12,
-                    onChanged: (value) {
-                      settings.setFontSize(value);
-                    },
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${settings.fontSize.round()}px',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
         ),
       ),
     );
