@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/constants/app_constants.dart';
 
 class ModernBottomBar extends StatelessWidget {
   final int currentIndex;
@@ -43,9 +44,10 @@ class ModernBottomBar extends StatelessWidget {
               return Expanded(
                 child: InkWell(
                   onTap: () => onTap(index),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppConstants.cardRadius),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppConstants.defaultPadding, vertical: 8),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -69,7 +71,7 @@ class ModernBottomBar extends StatelessWidget {
                               color: isSelected
                                   ? colorScheme.onPrimaryContainer
                                   : colorScheme.onSurfaceVariant,
-                              size: 24,
+                              size: AppConstants.defaultIconSize + 4,
                             ),
                           ),
                         ),

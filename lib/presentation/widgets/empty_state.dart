@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import '../../core/constants/app_constants.dart';
 
 class EmptyState extends StatelessWidget {
   final String title;
@@ -27,7 +28,7 @@ class EmptyState extends StatelessWidget {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.all(AppConstants.defaultSpacing),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -49,7 +50,7 @@ class EmptyState extends StatelessWidget {
                 ),
                 child: Icon(
                   icon!,
-                  size: 48,
+                  size: AppConstants.defaultIconSize * 2.5,
                   color: colorScheme.primary,
                 ),
               ),

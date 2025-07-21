@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../constants/app_constants.dart';
 
 class AppTheme {
   // Design System Constants
-  static const double _cardBorderRadius = 16.0;
-  static const double _buttonBorderRadius = 12.0;
-  static const double _inputBorderRadius = 12.0;
+  static const double _cardBorderRadius = AppConstants.cardRadius;
+  static const double _buttonBorderRadius = AppConstants.buttonRadius;
+  static const double _inputBorderRadius = AppConstants.buttonRadius;
 
   // Spacing
   static const double spacing_2xs = 4.0;
   static const double spacing_xs = 8.0;
   static const double spacing_sm = 12.0;
-  static const double spacing_md = 16.0;
-  static const double spacing_lg = 24.0;
+  static const double spacing_md = AppConstants.defaultPadding;
+  static const double spacing_lg = AppConstants.defaultSpacing;
   static const double spacing_xl = 32.0;
   static const double spacing_2xl = 48.0;
 
@@ -26,7 +27,7 @@ class AppTheme {
 
   // Animation Durations
   static const Duration duration_short = Duration(milliseconds: 200);
-  static const Duration duration_medium = Duration(milliseconds: 300);
+  static const Duration duration_medium = AppConstants.animationDuration;
   static const Duration duration_long = Duration(milliseconds: 400);
 
   // Animation Curves

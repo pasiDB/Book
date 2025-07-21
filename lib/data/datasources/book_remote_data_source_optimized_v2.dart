@@ -2,6 +2,7 @@ import '../../core/services/api_service_optimized.dart';
 import '../../core/services/cache_service_optimized.dart';
 import '../models/api_response_model.dart';
 import '../models/book_model.dart';
+import '../../core/constants/app_constants.dart';
 
 abstract class BookRemoteDataSourceOptimized {
   Future<List<BookModel>> getBooksByTopic(String topic);
@@ -34,7 +35,7 @@ class BookRemoteDataSourceOptimizedImpl
 
       // Fetch from API with retry
       final response = await _apiService.getWithRetry<Map<String, dynamic>>(
-        '/books/',
+        AppConstants.booksEndpoint,
         queryParameters: {'topic': topic, 'copyright': false},
         useCache: true,
       );
@@ -76,7 +77,7 @@ class BookRemoteDataSourceOptimizedImpl
   Future<List<BookModel>> searchBooks(String query) async {
     try {
       final response = await _apiService.getWithRetry<Map<String, dynamic>>(
-        '/books/',
+        AppConstants.booksEndpoint,
         queryParameters: {'search': query, 'copyright': false},
         useCache: true,
       );
@@ -119,7 +120,7 @@ class BookRemoteDataSourceOptimizedImpl
       }
 
       final response = await _apiService.getWithRetry<Map<String, dynamic>>(
-        '/books/$id/',
+        '${AppConstants.booksEndpoint}$id/',
         queryParameters: {'copyright': false},
         useCache: true,
       );
@@ -170,7 +171,7 @@ class BookRemoteDataSourceOptimizedImpl
   Future<List<BookModel>> getBooksByPage(int page) async {
     try {
       final response = await _apiService.getWithRetry<Map<String, dynamic>>(
-        '/books/',
+        AppConstants.booksEndpoint,
         queryParameters: {'page': page, 'copyright': false},
         useCache: true,
       );

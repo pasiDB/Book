@@ -5,6 +5,7 @@ import '../datasources/book_local_data_source.dart';
 import '../datasources/book_local_data_source_hive.dart';
 import '../../domain/entities/reading_progress.dart';
 import '../../domain/repositories/reading_repository.dart';
+import '../../core/constants/app_constants.dart';
 
 class BookRepositoryOptimized implements BookRepository, ReadingRepository {
   final BookRemoteDataSourceOptimized remoteDataSource;
@@ -87,18 +88,7 @@ class BookRepositoryOptimized implements BookRepository, ReadingRepository {
   Future<void> _loadAllCategoriesFromAPI() async {
     print('🔄 Loading all categories from API...');
 
-    final futures = [
-      'fiction',
-      'science',
-      'history',
-      'philosophy',
-      'poetry',
-      'drama',
-      'biography',
-      'adventure',
-      'romance',
-      'mystery'
-    ].map((category) async {
+    final futures = AppConstants.bookCategories.map((category) async {
       try {
         print('📥 Fetching books for category: $category');
         final books = await remoteDataSource.getBooksByTopicWithPagination(

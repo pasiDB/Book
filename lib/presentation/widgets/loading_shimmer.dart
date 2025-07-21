@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../core/constants/app_constants.dart';
 
 class LoadingShimmer extends StatelessWidget {
   const LoadingShimmer({super.key});
@@ -10,7 +11,7 @@ class LoadingShimmer extends StatelessWidget {
       baseColor: Colors.grey[300]!,
       highlightColor: Colors.grey[100]!,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
         itemCount: 10,
         itemBuilder: (context, index) {
           return Padding(
@@ -48,7 +49,7 @@ class LoadingShimmer extends StatelessWidget {
                           const SizedBox(height: 8),
                           Container(
                             width: 150,
-                            height: 16,
+                            height: AppConstants.defaultFontSize,
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(4),
@@ -71,7 +72,8 @@ class LoadingShimmer extends StatelessWidget {
                                 height: 24,
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(
+                                      AppConstants.cardRadius),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -80,7 +82,8 @@ class LoadingShimmer extends StatelessWidget {
                                 height: 24,
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(
+                                      AppConstants.cardRadius),
                                 ),
                               ),
                             ],

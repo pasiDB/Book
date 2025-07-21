@@ -28,10 +28,47 @@ class AppConstants {
   static const String currentlyReadingKey = 'currently_reading';
   static const String bookmarksKey = 'bookmarks';
 
+  // Additional Storage Keys
+  static const String searchHistoryKey = 'search_history';
+  static const String categoryCacheKey = 'category_cache';
+  static const String appDataKey = 'app_data';
+  static const String firstLaunchKey = 'first_launch_completed';
+
+  // Search/History
+  static const int maxSearchHistory = 10;
+  static const Duration defaultDebounce = Duration(milliseconds: 400);
+
+  // Book Content
+  static const int defaultChunkSize = 3000;
+
+  // UI Padding
+  static const double defaultPadding = 16.0;
+  static const double defaultSpacing = 24.0;
+  static const double defaultIconSize = 24.0;
+
+  // Network Headers
+  static const String userAgent = 'BookReader/3.0.0 (Hive-Optimized)';
+  static const String acceptHeader = 'application/json';
+  static const String connectionHeader = 'keep-alive';
+
+  // Error Messages (for consistency)
+  static const String errorTimeout = 'timeout';
+  static const String errorConnection = 'connection';
+  static const String errorDio = 'DioException';
+  static const String errorFailedToFetch = 'Failed to fetch';
+  static const String errorBookNotFound = 'Book not found';
+  static const String errorNoBooksFound = 'No books found';
+  static const String errorUnexpected =
+      'An unexpected error occurred. Please try again.';
+
   // Default Values
   static const double defaultFontSize = 16.0;
   static const double minFontSize = 12.0;
   static const double maxFontSize = 24.0;
+  static const double defaultRadius = 8.0;
+  static const double minLineHeight = 1.2;
+  static const double maxLineHeight = 2.0;
+  static const double charWidthEstimate = 0.6;
 
   // UI Constants
   static const double cardRadius = 12.0;

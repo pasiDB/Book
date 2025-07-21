@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../core/constants/app_constants.dart';
 
 class ShimmerLoading extends StatelessWidget {
   final double width;
@@ -28,7 +29,7 @@ class ShimmerLoading extends StatelessWidget {
         margin: margin,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(borderRadius),
+          borderRadius: BorderRadius.circular(AppConstants.cardRadius),
         ),
       ),
     );
@@ -61,7 +62,7 @@ class ShimmerBookCard extends StatelessWidget {
         const SizedBox(height: 8),
         ShimmerLoading(
           width: width * 0.8,
-          height: 16,
+          height: AppConstants.defaultFontSize,
           borderRadius: 4,
         ),
         const SizedBox(height: 4),
@@ -84,7 +85,7 @@ class ShimmerBookList extends StatelessWidget {
     super.key,
     this.itemCount = 10,
     this.scrollDirection = Axis.horizontal,
-    this.padding = const EdgeInsets.all(16),
+    this.padding = const EdgeInsets.all(AppConstants.defaultPadding),
   });
 
   @override
@@ -127,7 +128,7 @@ class ShimmerBookList extends StatelessWidget {
                   children: [
                     ShimmerLoading(
                       width: double.infinity,
-                      height: 16,
+                      height: AppConstants.defaultFontSize,
                       borderRadius: 4,
                     ),
                     const SizedBox(height: 8),

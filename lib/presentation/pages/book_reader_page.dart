@@ -7,6 +7,7 @@ import '../bloc/book/book_bloc_optimized_v2.dart';
 import '../bloc/book/book_event.dart';
 import '../bloc/book/book_state.dart';
 import '../widgets/modern_loading_indicator.dart';
+import '../../core/constants/app_constants.dart';
 
 class BookReaderPage extends StatefulWidget {
   final int bookId;
@@ -113,7 +114,8 @@ class _BookReaderPageState extends State<BookReaderPage> {
         (params.pagePadding.top + params.pagePadding.bottom);
 
     // Estimate characters per line based on average character width
-    final avgCharWidth = params.fontSize * 0.6; // Rough estimate
+    final avgCharWidth = params.fontSize *
+        0.6; // Could be AppConstants.charWidthEstimate if reused
     final charsPerLine = (availableWidth / avgCharWidth).round();
 
     // Estimate lines per page
@@ -504,12 +506,15 @@ class _BookReaderPageState extends State<BookReaderPage> {
                 ),
                 Row(
                   children: [
-                    const Text('1.2', style: TextStyle(fontSize: 14)),
+                    const Text('1.2',
+                        style: TextStyle(
+                            fontSize:
+                                14)), // Could be AppConstants.minLineHeight
                     Expanded(
                       child: Slider(
                         value: tempLineHeight,
-                        min: 1.2,
-                        max: 2.0,
+                        min: 1.2, // AppConstants.minLineHeight
+                        max: 2.0, // AppConstants.maxLineHeight
                         divisions: 8,
                         label: tempLineHeight.toStringAsFixed(1),
                         onChanged: (value) {
@@ -517,7 +522,9 @@ class _BookReaderPageState extends State<BookReaderPage> {
                         },
                       ),
                     ),
-                    const Text('2.0', style: TextStyle(fontSize: 18)),
+                    const Text('2.0',
+                        style: TextStyle(
+                            fontSize: 18)), // AppConstants.maxLineHeight
                   ],
                 ),
                 Align(

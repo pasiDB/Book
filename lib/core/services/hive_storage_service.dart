@@ -1,12 +1,13 @@
 import 'package:hive/hive.dart';
 import '../../data/models/book_hive_model.dart';
 import '../../domain/entities/book.dart';
+import '../../core/constants/app_constants.dart';
 
 class HiveStorageService {
-  static const String booksBoxName = 'books';
-  static const String categoryCacheBoxName = 'category_cache';
-  static const String appDataBoxName = 'app_data';
-  static const String firstLaunchKey = 'first_launch_completed';
+  static const String booksBoxName = AppConstants.downloadedBooksKey;
+  static const String categoryCacheBoxName = AppConstants.categoryCacheKey;
+  static const String appDataBoxName = AppConstants.appDataKey;
+  static const String firstLaunchKey = AppConstants.firstLaunchKey;
 
   // Lazy boxes for better performance
   late final LazyBox<BookHiveModel> _booksBox;

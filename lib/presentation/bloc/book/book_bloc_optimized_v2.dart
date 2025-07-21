@@ -538,7 +538,7 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
   }
 
   List<String> _splitContentIntoChunks(String content) {
-    const int chunkSize = 3000;
+    const int chunkSize = AppConstants.defaultChunkSize;
     List<String> chunks = [];
     int start = 0;
     while (start < content.length) {
@@ -571,18 +571,20 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
   }
 
   String _getUserFriendlyError(String error) {
-    if (error.contains('timeout') || error.contains('Timeout')) {
+    if (error.contains(AppConstants.errorTimeout) ||
+        error.contains('Timeout')) {
       return 'Request timeout - the server took too long to respond. Please try again.';
-    } else if (error.contains('connection') || error.contains('Connection')) {
+    } else if (error.contains(AppConstants.errorConnection) ||
+        error.contains('Connection')) {
       return 'No internet connection. Please check your network settings.';
-    } else if (error.contains('DioException')) {
+    } else if (error.contains(AppConstants.errorDio)) {
       return 'Network error occurred. Please check your internet connection.';
-    } else if (error.contains('Failed to fetch')) {
+    } else if (error.contains(AppConstants.errorFailedToFetch)) {
       return 'Failed to load data from server. Please try again later.';
-    } else if (error.contains('Book not found')) {
+    } else if (error.contains(AppConstants.errorBookNotFound)) {
       return 'The requested book could not be found.';
     } else {
-      return 'An unexpected error occurred. Please try again.';
+      return AppConstants.errorUnexpected;
     }
   }
 }

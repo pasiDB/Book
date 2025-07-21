@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/constants/app_constants.dart';
 
 class ModernSearchBar extends StatefulWidget {
   final String? hintText;
@@ -110,7 +111,7 @@ class _ModernSearchBarState extends State<ModernSearchBar>
           color: _focusNode.hasFocus
               ? colorScheme.surfaceVariant
               : colorScheme.surfaceVariant.withOpacity(0.5),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppConstants.cardRadius),
           border: Border.all(
             color:
                 _focusNode.hasFocus ? colorScheme.primary : Colors.transparent,
@@ -120,7 +121,8 @@ class _ModernSearchBarState extends State<ModernSearchBar>
         child: Row(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppConstants.defaultPadding),
               child: Icon(
                 Icons.search,
                 color: _focusNode.hasFocus

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lottie/lottie.dart';
+import '../../core/constants/app_constants.dart';
 
 class ModernLoadingIndicator extends StatefulWidget {
   final String? message;
@@ -32,7 +33,7 @@ class _ModernLoadingIndicatorState extends State<ModernLoadingIndicator>
     _controllers = List.generate(
         3,
         (index) => AnimationController(
-              duration: const Duration(milliseconds: 800),
+              duration: AppConstants.animationDuration * 4,
               vsync: this,
             ));
 
@@ -95,8 +96,8 @@ class _ModernLoadingIndicatorState extends State<ModernLoadingIndicator>
           )
         else if (widget.useCircularIndicator)
           SizedBox(
-            width: widget.size,
-            height: widget.size,
+            width: AppConstants.defaultIconSize * 2,
+            height: AppConstants.defaultIconSize * 2,
             child: CircularProgressIndicator(
               strokeWidth: 3,
               valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../domain/entities/book.dart';
+import '../../core/constants/app_constants.dart';
 
 class BookCard extends StatelessWidget {
   final Book book;
@@ -43,7 +44,8 @@ class BookCard extends StatelessWidget {
                   width: 75, // Increased from 60 for bigger cover
                   height: 100, // Increased from 80 for bigger cover
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius:
+                        BorderRadius.circular(AppConstants.cardRadius),
                     boxShadow: [
                       BoxShadow(
                         color: colorScheme.shadow.withOpacity(0.08),
@@ -53,7 +55,8 @@ class BookCard extends StatelessWidget {
                     ],
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius:
+                        BorderRadius.circular(AppConstants.cardRadius),
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
@@ -99,10 +102,12 @@ class BookCard extends StatelessWidget {
                     top: 6, // Increased from 4
                     right: 6, // Increased from 4
                     child: Container(
-                      padding: const EdgeInsets.all(4), // Increased from 3
+                      padding:
+                          const EdgeInsets.all(AppConstants.defaultPadding),
                       decoration: BoxDecoration(
                         color: colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius:
+                            BorderRadius.circular(AppConstants.cardRadius),
                       ),
                       child: Icon(
                         Icons.book,
@@ -123,7 +128,7 @@ class BookCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: colorScheme.surfaceVariant.withOpacity(0.3),
                         borderRadius: const BorderRadius.vertical(
-                          bottom: Radius.circular(8),
+                          bottom: Radius.circular(AppConstants.cardRadius),
                         ),
                       ),
                       child: FractionallySizedBox(
@@ -133,7 +138,7 @@ class BookCard extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: colorScheme.primary,
                             borderRadius: const BorderRadius.vertical(
-                              bottom: Radius.circular(8),
+                              bottom: Radius.circular(AppConstants.cardRadius),
                             ),
                           ),
                         ),
@@ -157,7 +162,7 @@ class BookCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        fontSize: 16,
+                        fontSize: AppConstants.defaultFontSize,
                         fontWeight: FontWeight.w600,
                         height: 1.2,
                       ),

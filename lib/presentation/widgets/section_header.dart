@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/constants/app_constants.dart';
 
 class SectionHeader extends StatelessWidget {
   final String title;
@@ -47,7 +48,7 @@ class SectionHeader extends StatelessWidget {
                   onPressed: onActionPressed,
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
+                      horizontal: AppConstants.defaultPadding,
                       vertical: 8,
                     ),
                   ),

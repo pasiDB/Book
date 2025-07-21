@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'dart:async';
+import '../constants/app_constants.dart';
 
 class ApiServiceOptimized {
   final Dio _dio;
@@ -115,9 +116,9 @@ class ApiServiceOptimized {
         queryParameters: queryParameters,
         options: Options(
           headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'BookReader/2.0.0',
-            'Connection': 'keep-alive',
+            'Accept': AppConstants.acceptHeader,
+            'User-Agent': AppConstants.userAgent,
+            'Connection': AppConstants.connectionHeader,
           },
         ),
       );

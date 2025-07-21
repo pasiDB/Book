@@ -105,7 +105,8 @@ class _HomePageState extends State<HomePage> {
         children: [
           // Categories Section - Always visible
           Padding(
-            padding: const EdgeInsets.only(left: 16, top: 24, bottom: 8),
+            padding: const EdgeInsets.only(
+                left: AppConstants.defaultPadding, top: 24, bottom: 8),
             child: Text(
               'Categories',
               style: theme.textTheme.titleLarge
@@ -116,7 +117,8 @@ class _HomePageState extends State<HomePage> {
             height: 56,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppConstants.defaultPadding),
               itemCount: AppConstants.bookCategories.length,
               itemBuilder: (context, index) {
                 final category = AppConstants.bookCategories[index];
@@ -149,7 +151,10 @@ class _HomePageState extends State<HomePage> {
           ),
           // Books Section
           Padding(
-            padding: const EdgeInsets.only(left: 16, top: 24, bottom: 8),
+            padding: const EdgeInsets.only(
+                left: AppConstants.defaultPadding,
+                top: AppConstants.defaultSpacing,
+                bottom: 8),
             child: Text(
               'Books',
               style: theme.textTheme.titleLarge

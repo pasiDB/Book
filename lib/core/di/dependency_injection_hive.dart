@@ -97,9 +97,9 @@ class DependencyInjectionHive {
       receiveTimeout: const Duration(seconds: 60), // Increased from 15
       sendTimeout: const Duration(seconds: 30), // Increased from 15
       headers: {
-        'User-Agent': 'BookReader/3.0.0 (Hive-Optimized)',
-        'Accept': 'application/json',
-        'Connection': 'keep-alive',
+        'User-Agent': AppConstants.userAgent,
+        'Accept': AppConstants.acceptHeader,
+        'Connection': AppConstants.connectionHeader,
       },
     ));
 

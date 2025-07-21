@@ -8,6 +8,7 @@ import '../bloc/book/book_state.dart';
 import '../widgets/book_card.dart';
 import '../widgets/modern_loading_indicator.dart';
 import '../../core/services/search_history_service.dart';
+import '../../core/constants/app_constants.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -65,7 +66,7 @@ class _SearchPageState extends State<SearchPage> {
     setState(() {
       _showHistory = _searchController.text.isEmpty;
     });
-    _debounce = Timer(const Duration(milliseconds: 400), () {
+    _debounce = Timer(AppConstants.defaultDebounce, () {
       final query = _searchController.text.trim();
       if (query.isNotEmpty) {
         setState(() => _isSearching = true);
@@ -120,7 +121,7 @@ class _SearchPageState extends State<SearchPage> {
         children: [
           // Search Bar
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppConstants.defaultPadding),
             child: Focus(
               onFocusChange: _onFocusChange,
               child: TextField(
@@ -130,7 +131,8 @@ class _SearchPageState extends State<SearchPage> {
                   hintText: 'Search for books...',
                   prefixIcon: _isSearching
                       ? Padding(
-                          padding: const EdgeInsets.all(12.0),
+                          padding: const EdgeInsets.all(
+                              12.0), // Could be AppConstants.defaultPadding if used elsewhere
                           child: SizedBox(
                             width: 16,
                             height: 16,
@@ -162,8 +164,8 @@ class _SearchPageState extends State<SearchPage> {
               child: ListView(
                 children: [
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppConstants.defaultPadding, vertical: 8),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -287,7 +289,8 @@ class _SearchPageState extends State<SearchPage> {
                   return isLargeScreen
                       ? GridView.builder(
                           controller: _scrollController,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppConstants.defaultPadding),
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 3,
@@ -309,7 +312,8 @@ class _SearchPageState extends State<SearchPage> {
                         )
                       : ListView.builder(
                           controller: _scrollController,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppConstants.defaultPadding),
                           itemCount: state.books.length,
                           itemBuilder: (context, index) {
                             final book = state.books[index];

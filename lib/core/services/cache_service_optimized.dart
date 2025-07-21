@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
+import '../constants/app_constants.dart';
 
 class CacheServiceOptimized {
   final SharedPreferences _prefs;
@@ -183,15 +184,18 @@ class CacheServiceOptimized {
   // Book-specific cache operations
   Future<List<Map<String, dynamic>>?> getBooksByCategory(
       String category) async {
-    return await get<List<Map<String, dynamic>>>('books_$category');
+    return await get<List<Map<String, dynamic>>>(
+      '${AppConstants.downloadedBooksKey}_$category',
+    );
   }
 
   Future<void> setBooksByCategory(String category, List<dynamic> books) async {
-    await set('books_$category', books);
+    await set('${AppConstants.downloadedBooksKey}_$category', books);
   }
 
   Future<String?> getBookContent(int bookId) async {
-    return await get<String>('content_$bookId');
+    return await get<String>(
+        'content_$bookId'); // Consider making a constant if reused
   }
 
   Future<void> setBookContent(int bookId, String content) async {
