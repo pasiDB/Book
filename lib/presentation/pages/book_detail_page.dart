@@ -97,18 +97,16 @@ class _BookDetailPageState extends State<BookDetailPage> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Error: ${state.error}',
-                      textAlign: TextAlign.center,
+                      'Book Not Available',
                       style: theme.textTheme.titleMedium,
                     ),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: () {
-                        context
-                            .read<BookBlocOptimizedV2>()
-                            .add(LoadBookById(widget.bookId));
-                      },
-                      child: const Text('Retry'),
+                    const SizedBox(height: 8),
+                    Text(
+                      'This book could not be loaded or is no longer available.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),

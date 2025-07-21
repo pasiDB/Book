@@ -271,25 +271,16 @@ class _BookReaderPageState extends State<BookReaderPage> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Error loading book',
+                    'Book Not Available',
                     style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    state.error!,
+                    'This book could not be loaded or is no longer available.',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      context
-                          .read<BookBlocOptimizedV2>()
-                          .add(LoadBookById(widget.bookId));
-                    },
-                    child: const Text('Retry'),
                   ),
                 ],
               ),
