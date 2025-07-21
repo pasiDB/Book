@@ -508,6 +508,13 @@ class BookBlocOptimizedV2 extends Bloc<BookEvent, BookState> {
     Emitter<BookState> emit,
   ) async {
     try {
+      // Only save progress if the book is already in the library
+      final isInLibrary =
+          state.currentlyReadingBooks.any((b) => b.id == event.bookId);
+      if (!isInLibrary) {
+        // Do not save progress for books not in library
+        return;
+      }
       final progress = ReadingProgress(
         bookId: event.bookId,
         progress: event.chunkIndex / state.bookContentChunks.length,

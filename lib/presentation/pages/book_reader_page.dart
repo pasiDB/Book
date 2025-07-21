@@ -239,6 +239,10 @@ class _BookReaderPageState extends State<BookReaderPage> {
             setState(() {
               _currentPageIndex = state.readingProgress!.currentPosition;
             });
+            // Restore page position if pages are loaded
+            if (_pages.isNotEmpty && _pageController.hasClients) {
+              _pageController.jumpToPage(_currentPageIndex);
+            }
           }
 
           // Split content into pages when content is loaded
@@ -313,6 +317,9 @@ class _BookReaderPageState extends State<BookReaderPage> {
             return const ModernLoadingIndicator();
           }
 
+          final isInLibrary = state.selectedBook != null &&
+              state.currentlyReadingBooks
+                  .any((b) => b.id == state.selectedBook!.id);
           return Column(
             children: [
               // Progress indicator
@@ -324,6 +331,21 @@ class _BookReaderPageState extends State<BookReaderPage> {
                 valueColor:
                     AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
               ),
+
+              // Add to Library button (if not already in library)
+              // if (!isInLibrary && state.selectedBook != null)
+              //   Padding(
+              //     padding: const EdgeInsets.symmetric(vertical: 8.0),
+              //     child: ElevatedButton.icon(
+              //       icon: const Icn(Icons.library_add),
+              //       label: const Text('Add to Library'),
+              //       onPressed: () {
+              //         context
+              //             .read<BookBlocOptimizedV2>()
+              //             .add(AddBookToLibrary(state.selectedBook!));
+              //       },
+              //     ),
+              //   )
 
               // Page content area
               Expanded(
