@@ -253,6 +253,14 @@ class _BookReaderPageState extends State<BookReaderPage> {
             if (_pages.isNotEmpty && _pageController?.hasClients == true) {
               _pageController!.jumpToPage(_currentPageIndex);
             }
+          } else {
+            // No progress found, reset to first page
+            setState(() {
+              _currentPageIndex = 0;
+            });
+            if (_pages.isNotEmpty && _pageController?.hasClients == true) {
+              _pageController!.jumpToPage(0);
+            }
           }
 
           // Split content into pages when content is loaded
@@ -444,6 +452,8 @@ class _BookReaderPageState extends State<BookReaderPage> {
           targetPage = pageIndex;
         } else if (state.readingProgress != null) {
           targetPage = state.readingProgress!.currentPosition;
+        } else {
+          targetPage = 0;
         }
       }
       // Dispose old controller and create a new one with correct initialPage
