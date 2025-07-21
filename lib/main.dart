@@ -47,6 +47,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await RemoteConfigService.instance.init();
+  RemoteConfigService.instance.listenForUrlChanges();
 
   runApp(const GlobalWebViewWrapper(child: MyAppHiveOptimized()));
 }
