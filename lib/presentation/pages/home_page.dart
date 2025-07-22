@@ -92,6 +92,19 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isLargeScreen = MediaQuery.of(context).size.width > 600;
+
+    // Automatically reload books if the list is empty, not loading, and not errored
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bloc = context.read<BookBlocOptimizedV2>();
+      final state = bloc.state;
+      if (selectedCategory != null &&
+          !state.isLoading &&
+          state.error == null &&
+          state.books.isEmpty) {
+        bloc.add(LoadBooksByTopic(selectedCategory!));
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('The Shelf'),
