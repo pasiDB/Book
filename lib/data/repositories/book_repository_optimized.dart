@@ -235,7 +235,7 @@ class BookRepositoryOptimized implements BookRepository, ReadingRepository {
               currentPosition: 0,
               scrollOffset: 0.0,
               lastReadAt: DateTime.now(),
-              bookmarks: [],
+              bookmarks: const [],
             ))
         .copyWith(bookmarks: [...(existing?.bookmarks ?? []), position]);
     await saveReadingProgress(updated);

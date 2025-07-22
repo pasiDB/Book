@@ -112,16 +112,16 @@ class ShimmerBookList extends StatelessWidget {
       padding: padding,
       itemCount: itemCount,
       itemBuilder: (context, index) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
+        return const Padding(
+          padding: EdgeInsets.only(bottom: 16),
           child: Row(
             children: [
-              const ShimmerLoading(
+              ShimmerLoading(
                 width: 80,
                 height: 120,
                 borderRadius: 8,
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,13 +131,13 @@ class ShimmerBookList extends StatelessWidget {
                       height: AppConstants.defaultFontSize,
                       borderRadius: 4,
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     ShimmerLoading(
                       width: 120,
                       height: 14,
                       borderRadius: 4,
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     ShimmerLoading(
                       width: double.infinity,
                       height: 40,

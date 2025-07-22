@@ -159,6 +159,7 @@ class _LibraryPageState extends State<LibraryPage> {
                           ),
                         );
                         if (confirmed == true) {
+                          // ignore: use_build_context_synchronously
                           context
                               .read<BookBlocOptimizedV2>()
                               .add(RemoveFromLibrary(book));

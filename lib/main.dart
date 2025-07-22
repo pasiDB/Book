@@ -120,7 +120,7 @@ class _SplashScreenHiveOptimizedState extends State<SplashScreenHiveOptimized> {
   Widget build(BuildContext context) {
     if (_loadingDone) {
       // Use router-based navigation after splash
-      return _MainAppRouterHiveOptimized();
+      return const _MainAppRouterHiveOptimized();
     }
     final theme = Theme.of(context);
     return Scaffold(

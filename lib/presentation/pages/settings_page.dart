@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/settings_service.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'webview_page.dart';
+import '../../core/di/dependency_injection_hive.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -216,6 +216,22 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             const SizedBox(height: 16),
+            FutureBuilder<double>(
+              future: DependencyInjectionHive.getStorageUsageMB(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Text('Storage Usage: ...');
+                }
+                final usage = snapshot.data ?? 0.0;
+                return Text(
+                  'Storage Usage: ${usage.toStringAsFixed(2)} MB',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -338,6 +354,7 @@ class _SettingsPageState extends State<SettingsPage> {
               Navigator.of(context).pop();
               await context.read<SettingsService>().clearAllData();
               if (mounted) {
+                // ignore: use_build_context_synchronously
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Data cleared successfully'),

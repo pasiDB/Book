@@ -2,6 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'dart:developer' as developer;
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../services/hive_storage_service.dart';
 import '../services/api_service_optimized.dart';
@@ -196,8 +199,32 @@ class DependencyInjectionHive {
   }
 
   static double _getMemoryUsage() {
-    // Simple memory usage estimation
-    return 0.0; // TODO: Implement actual memory monitoring
+    // Returns memory usage in MB (native platforms only)
+    if (kIsWeb) return 0.0;
+    return ProcessInfo.currentRss / (1024 * 1024);
+  }
+
+  static Future<double> getStorageUsageMB() async {
+    double totalBytes = 0;
+
+    Future<void> addDirSize(Directory dir) async {
+      if (await dir.exists()) {
+        await for (var entity
+            in dir.list(recursive: true, followLinks: false)) {
+          if (entity is File) {
+            totalBytes += await entity.length();
+          }
+        }
+      }
+    }
+
+    final docDir = await getApplicationDocumentsDirectory();
+    final cacheDir = await getTemporaryDirectory();
+
+    await addDirSize(docDir);
+    await addDirSize(cacheDir);
+
+    return totalBytes / (1024 * 1024); // Convert to MB
   }
 
   // First launch and cache management methods

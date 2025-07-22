@@ -168,13 +168,13 @@ extension BookModelConversion on BookModel {
       id: id,
       title: title,
       author: author,
-      authors: [], // BookModel doesn't have authors list, so use empty list
+      authors: const [], // BookModel doesn't have authors list, so use empty list
       coverUrl: coverUrl,
       coverImageUrl: coverUrl, // Use coverUrl for both fields
       description: description,
       languages: languages,
       subjects: subjects,
-      bookshelves: [], // BookModel doesn't have bookshelves, so use empty list
+      bookshelves: const [], // BookModel doesn't have bookshelves, so use empty list
       readingProgress: readingProgress,
       isDownloaded: isDownloaded,
       downloadPath: downloadPath,

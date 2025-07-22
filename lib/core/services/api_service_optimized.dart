@@ -177,7 +177,7 @@ class ApiServiceOptimized {
       try {
         return await get<T>(path,
             queryParameters: queryParameters, useCache: useCache);
-      } on ApiException catch (e) {
+      } on ApiException {
         attempts++;
         if (attempts >= maxRetries) {
           rethrow;

@@ -62,11 +62,8 @@ class _HomePageState extends State<HomePage> {
     final bloc = context.read<BookBlocOptimizedV2>();
     final cachedBooks = bloc.getCachedBooksForCategory(category);
     if (cachedBooks != null && cachedBooks.isNotEmpty) {
-      bloc.emit(bloc.state.copyWith(
-        books: cachedBooks,
-        isLoading: false,
-        category: category,
-      ));
+      // Instead of emitting state directly, trigger a reload event (the Bloc will use cache if valid)
+      bloc.add(LoadBooksByTopic(category));
     } else {
       bloc.add(LoadBooksByTopic(category));
     }
@@ -222,7 +219,7 @@ class _HomePageState extends State<HomePage> {
                             OutlinedButton.icon(
                               onPressed: () {
                                 // Try a different category
-                                final categories = AppConstants.bookCategories;
+                                const categories = AppConstants.bookCategories;
                                 final currentIndex =
                                     categories.indexOf(selectedCategory!);
                                 final nextIndex =

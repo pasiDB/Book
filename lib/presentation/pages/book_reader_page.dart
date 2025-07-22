@@ -337,9 +337,6 @@ class _BookReaderPageState extends State<BookReaderPage> {
             return const ModernLoadingIndicator();
           }
 
-          final isInLibrary = state.selectedBook != null &&
-              state.currentlyReadingBooks
-                  .any((b) => b.id == state.selectedBook!.id);
           return Column(
             children: [
               // Progress indicator
