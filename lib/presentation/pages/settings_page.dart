@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/settings_service.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'webview_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -266,6 +268,26 @@ class _SettingsPageState extends State<SettingsPage> {
               'This app only displays books marked as public domain in the USA using the copyright=false flag from the Gutendex API. It excludes copyrighted or unverified material to ensure legal and safe distribution.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const WebViewPage(
+                      url: 'https://gutendex.com/',
+                      title: 'Gutendex',
+                    ),
+                  ),
+                );
+              },
+              child: Text(
+                'Learn more about Gutendex',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.primary,
+                  decoration: TextDecoration.underline,
+                ),
               ),
             ),
           ],
