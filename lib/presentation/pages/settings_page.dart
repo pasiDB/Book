@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../core/services/settings_service.dart';
 import 'webview_page.dart';
 import '../../core/di/dependency_injection_hive.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -353,8 +355,38 @@ class _SettingsPageState extends State<SettingsPage> {
             onPressed: () async {
               Navigator.of(context).pop();
               await context.read<SettingsService>().clearAllData();
+              // Update baseline after clearing
+              final appDocDir = await getApplicationDocumentsDirectory();
+              double totalBytes = 0;
+              final hiveFiles = appDocDir
+                  .listSync()
+                  .where((f) => f is File && f.path.endsWith('.hive'))
+                  .cast<File>();
+              for (final file in hiveFiles) {
+                totalBytes += await file.length();
+              }
+              final prefsDir =
+                  Directory(appDocDir.path + '/../shared_preferences');
+              if (await prefsDir.exists()) {
+                for (final file in prefsDir.listSync()) {
+                  if (file is File) {
+                    totalBytes += await file.length();
+                  }
+                }
+              } else {
+                final androidPrefsDir =
+                    Directory(appDocDir.path + '/../shared_prefs');
+                if (await androidPrefsDir.exists()) {
+                  for (final file in androidPrefsDir.listSync()) {
+                    if (file is File) {
+                      totalBytes += await file.length();
+                    }
+                  }
+                }
+              }
+              await DependencyInjectionHive.saveClearableDataBaseline(
+                  totalBytes);
               if (mounted) {
-                // ignore: use_build_context_synchronously
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Data cleared successfully'),

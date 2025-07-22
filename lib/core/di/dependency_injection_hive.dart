@@ -227,9 +227,16 @@ class DependencyInjectionHive {
     return totalBytes / (1024 * 1024); // Convert to MB
   }
 
-  static Future<String> getCacheUsageString() async {
-    final stats = await _hiveStorageService.getCacheStats();
-    return stats['cacheSize'] ?? '0 KB';
+  static const String _clearableDataBaselineKey = 'clearable_data_baseline';
+
+  static Future<void> saveClearableDataBaseline(double bytes) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_clearableDataBaselineKey, bytes);
+  }
+
+  static Future<double> getClearableDataBaseline() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble(_clearableDataBaselineKey) ?? 0.0;
   }
 
   static Future<String> getClearableDataSizeString() async {
@@ -265,11 +272,16 @@ class DependencyInjectionHive {
       }
     }
 
+    // Subtract baseline
+    final baseline = await getClearableDataBaseline();
+    final displayBytes = totalBytes - baseline;
+    final safeBytes = displayBytes < 0 ? 0 : displayBytes;
+
     // Format as MB or KB
-    if (totalBytes > 1024 * 1024) {
-      return '${(totalBytes / (1024 * 1024)).toStringAsFixed(2)} MB';
+    if (safeBytes > 1024 * 1024) {
+      return '${(safeBytes / (1024 * 1024)).toStringAsFixed(2)} MB';
     } else {
-      return '${(totalBytes / 1024).toStringAsFixed(1)} KB';
+      return '${(safeBytes / 1024).toStringAsFixed(1)} KB';
     }
   }
 
