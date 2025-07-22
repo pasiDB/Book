@@ -228,3 +228,83 @@ class BookCard extends StatelessWidget {
     );
   }
 }
+
+class BookCardHorizontal extends StatelessWidget {
+  final Book book;
+  final VoidCallback onTap;
+
+  const BookCardHorizontal({required this.book, required this.onTap, Key? key})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Book cover
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: book.coverUrl != null && book.coverUrl!.isNotEmpty
+                  ? Image.network(
+                      book.coverUrl!,
+                      width: 80,
+                      height: 120,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        width: 80,
+                        height: 120,
+                        color: theme.colorScheme.surfaceVariant,
+                        child: Icon(Icons.book,
+                            size: 40,
+                            color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                    )
+                  : Container(
+                      width: 80,
+                      height: 120,
+                      color: theme.colorScheme.surfaceVariant,
+                      child: Icon(Icons.book,
+                          size: 40, color: theme.colorScheme.onSurfaceVariant),
+                    ),
+            ),
+            const SizedBox(width: 16),
+            // Book info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    book.title,
+                    style: theme.textTheme.titleMedium,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'by ${book.author}',
+                    style: theme.textTheme.bodySmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  if (book.description != null && book.description!.isNotEmpty)
+                    Text(
+                      book.description!,
+                      style: theme.textTheme.bodyMedium,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

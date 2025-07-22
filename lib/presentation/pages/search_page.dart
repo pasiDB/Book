@@ -286,21 +286,14 @@ class _SearchPageState extends State<SearchPage> {
                   }
 
                   return isLargeScreen
-                      ? GridView.builder(
+                      ? ListView.builder(
                           controller: _scrollController,
                           padding: const EdgeInsets.symmetric(
                               horizontal: AppConstants.defaultPadding),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            mainAxisSpacing: 16,
-                            crossAxisSpacing: 16,
-                            childAspectRatio: 0.65,
-                          ),
                           itemCount: state.books.length,
                           itemBuilder: (context, index) {
                             final book = state.books[index];
-                            return BookCard(
+                            return BookCardHorizontal(
                               book: book,
                               onTap: () {
                                 context.go('/book/${book.id}',
