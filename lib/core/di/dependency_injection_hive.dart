@@ -227,6 +227,52 @@ class DependencyInjectionHive {
     return totalBytes / (1024 * 1024); // Convert to MB
   }
 
+  static Future<String> getCacheUsageString() async {
+    final stats = await _hiveStorageService.getCacheStats();
+    return stats['cacheSize'] ?? '0 KB';
+  }
+
+  static Future<String> getClearableDataSizeString() async {
+    double totalBytes = 0;
+
+    // 1. Add Hive box files
+    final appDocDir = await getApplicationDocumentsDirectory();
+    final hiveFiles = appDocDir
+        .listSync()
+        .where((f) => f is File && f.path.endsWith('.hive'))
+        .cast<File>();
+    for (final file in hiveFiles) {
+      totalBytes += await file.length();
+    }
+
+    // 2. Add SharedPreferences file (platform-specific)
+    final prefsDir = Directory(appDocDir.path + '/../shared_preferences');
+    if (await prefsDir.exists()) {
+      for (final file in prefsDir.listSync()) {
+        if (file is File) {
+          totalBytes += await file.length();
+        }
+      }
+    } else {
+      // Android: shared_prefs is in appDocDir.parent.parent/"shared_prefs"
+      final androidPrefsDir = Directory(appDocDir.path + '/../shared_prefs');
+      if (await androidPrefsDir.exists()) {
+        for (final file in androidPrefsDir.listSync()) {
+          if (file is File) {
+            totalBytes += await file.length();
+          }
+        }
+      }
+    }
+
+    // Format as MB or KB
+    if (totalBytes > 1024 * 1024) {
+      return '${(totalBytes / (1024 * 1024)).toStringAsFixed(2)} MB';
+    } else {
+      return '${(totalBytes / 1024).toStringAsFixed(1)} KB';
+    }
+  }
+
   // First launch and cache management methods
   static Future<bool> isFirstLaunch() async {
     final result = await _localDataSource.isFirstLaunch();
@@ -270,12 +316,24 @@ class DependencyInjectionHive {
     developer.log('🔄 Reset to first launch - cleared all cache');
   }
 
+  static Future<void> deleteHiveFiles() async {
+    final appDocDir = await getApplicationDocumentsDirectory();
+    final hiveFiles = appDocDir
+        .listSync()
+        .where((f) => f is File && f.path.endsWith('.hive'))
+        .cast<File>();
+    for (final file in hiveFiles) {
+      await file.delete();
+    }
+  }
+
   // Cleanup method
   static Future<void> dispose() async {
     try {
       _bookBloc.close();
       await _hiveStorageService.flush();
       await _hiveStorageService.close();
+      await deleteHiveFiles();
       _dio.close();
       developer.log('🧹 Hive-based dependencies disposed');
     } catch (e) {

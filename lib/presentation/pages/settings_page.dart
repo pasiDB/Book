@@ -216,15 +216,15 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             const SizedBox(height: 16),
-            FutureBuilder<double>(
-              future: DependencyInjectionHive.getStorageUsageMB(),
+            FutureBuilder<String>(
+              future: DependencyInjectionHive.getClearableDataSizeString(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Text('Storage Usage: ...');
+                  return Text('Clearable Data: ...');
                 }
-                final usage = snapshot.data ?? 0.0;
+                final usage = snapshot.data ?? '0 KB';
                 return Text(
-                  'Storage Usage: ${usage.toStringAsFixed(2)} MB',
+                  'Clearable Data: $usage',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
