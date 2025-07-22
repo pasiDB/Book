@@ -1,4 +1,4 @@
-package com.bookreader.app
+package com.dlgn.theshelf
 
 import android.annotation.SuppressLint
 import android.app.Activity

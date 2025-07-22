@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyCyhDOJMBD8GIHuPAGFIiOZaIegilWfh_A</string>
+	<string>AIzaSyCX8MuYhkd0M-rBhYIoBN-8qDQEANIHb80</string>
 	<key>GCM_SENDER_ID</key>
-	<string>614725527374</string>
+	<string>168124375318</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.example.bookReader</string>
 	<key>PROJECT_ID</key>
-	<string>theshelf-e0726</string>
+	<string>theshelf-61b6f</string>
 	<key>STORAGE_BUCKET</key>
-	<string>theshelf-e0726.firebasestorage.app</string>
+	<string>theshelf-61b6f.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:614725527374:ios:be0a9ba76b7f8007b8601f</string>
+	<string>1:168124375318:ios:866351d06591601234f037</string>
 </dict>
 </plist>

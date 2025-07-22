@@ -1,4 +1,4 @@
-package com.bookreader.app
+package com.dlgn.theshelf
 
 import android.os.Bundle
 import io.flutter.embedding.android.FlutterActivity

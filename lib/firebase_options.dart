@@ -41,48 +41,49 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyByrcKkzWEpZDiTPkSKaoqEqEaUQQuoFq0',
-    appId: '1:614725527374:web:d32e6a509c2100f5b8601f',
-    messagingSenderId: '614725527374',
-    projectId: 'theshelf-e0726',
-    authDomain: 'theshelf-e0726.firebaseapp.com',
-    storageBucket: 'theshelf-e0726.firebasestorage.app',
-    measurementId: 'G-CN6W771E2L',
+    apiKey: 'AIzaSyDjZcvXwxwA_kl5cYeJiVj8JLu7rL9RXGA',
+    appId: '1:168124375318:web:cf6b697461af401934f037',
+    messagingSenderId: '168124375318',
+    projectId: 'theshelf-61b6f',
+    authDomain: 'theshelf-61b6f.firebaseapp.com',
+    storageBucket: 'theshelf-61b6f.firebasestorage.app',
+    measurementId: 'G-7QVMMZY7LS',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCTn4h3-ilam3iQmWplwTD7NZ6Br_QZadI',
-    appId: '1:614725527374:android:b02f7f47fbcb9d52b8601f',
-    messagingSenderId: '614725527374',
-    projectId: 'theshelf-e0726',
-    storageBucket: 'theshelf-e0726.firebasestorage.app',
+    apiKey: 'AIzaSyB-BmECcjbMAwOy351H3JWvJqX6xO9dZj8',
+    appId: '1:168124375318:android:311d6efada0ee6c034f037',
+    messagingSenderId: '168124375318',
+    projectId: 'theshelf-61b6f',
+    storageBucket: 'theshelf-61b6f.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCyhDOJMBD8GIHuPAGFIiOZaIegilWfh_A',
-    appId: '1:614725527374:ios:be0a9ba76b7f8007b8601f',
-    messagingSenderId: '614725527374',
-    projectId: 'theshelf-e0726',
-    storageBucket: 'theshelf-e0726.firebasestorage.app',
+    apiKey: 'AIzaSyCX8MuYhkd0M-rBhYIoBN-8qDQEANIHb80',
+    appId: '1:168124375318:ios:866351d06591601234f037',
+    messagingSenderId: '168124375318',
+    projectId: 'theshelf-61b6f',
+    storageBucket: 'theshelf-61b6f.firebasestorage.app',
     iosBundleId: 'com.example.bookReader',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCyhDOJMBD8GIHuPAGFIiOZaIegilWfh_A',
-    appId: '1:614725527374:ios:be0a9ba76b7f8007b8601f',
-    messagingSenderId: '614725527374',
-    projectId: 'theshelf-e0726',
-    storageBucket: 'theshelf-e0726.firebasestorage.app',
+    apiKey: 'AIzaSyCX8MuYhkd0M-rBhYIoBN-8qDQEANIHb80',
+    appId: '1:168124375318:ios:866351d06591601234f037',
+    messagingSenderId: '168124375318',
+    projectId: 'theshelf-61b6f',
+    storageBucket: 'theshelf-61b6f.firebasestorage.app',
     iosBundleId: 'com.example.bookReader',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyByrcKkzWEpZDiTPkSKaoqEqEaUQQuoFq0',
-    appId: '1:614725527374:web:d10d1f71f56da398b8601f',
-    messagingSenderId: '614725527374',
-    projectId: 'theshelf-e0726',
-    authDomain: 'theshelf-e0726.firebaseapp.com',
-    storageBucket: 'theshelf-e0726.firebasestorage.app',
-    measurementId: 'G-3H7JJ619LZ',
+    apiKey: 'AIzaSyDjZcvXwxwA_kl5cYeJiVj8JLu7rL9RXGA',
+    appId: '1:168124375318:web:95a4cafd83bb9d3134f037',
+    messagingSenderId: '168124375318',
+    projectId: 'theshelf-61b6f',
+    authDomain: 'theshelf-61b6f.firebaseapp.com',
+    storageBucket: 'theshelf-61b6f.firebasestorage.app',
+    measurementId: 'G-E9KPELF9P0',
   );
+
 }
