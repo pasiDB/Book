@@ -253,7 +253,7 @@ class DependencyInjectionHive {
     }
 
     // 2. Add SharedPreferences file (platform-specific)
-    final prefsDir = Directory(appDocDir.path + '/../shared_preferences');
+    final prefsDir = Directory('${appDocDir.path}/../shared_preferences');
     if (await prefsDir.exists()) {
       for (final file in prefsDir.listSync()) {
         if (file is File) {
@@ -262,7 +262,7 @@ class DependencyInjectionHive {
       }
     } else {
       // Android: shared_prefs is in appDocDir.parent.parent/"shared_prefs"
-      final androidPrefsDir = Directory(appDocDir.path + '/../shared_prefs');
+      final androidPrefsDir = Directory('${appDocDir.path}/../shared_prefs');
       if (await androidPrefsDir.exists()) {
         for (final file in androidPrefsDir.listSync()) {
           if (file is File) {

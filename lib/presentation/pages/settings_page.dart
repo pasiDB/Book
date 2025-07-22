@@ -222,7 +222,7 @@ class _SettingsPageState extends State<SettingsPage> {
               future: DependencyInjectionHive.getClearableDataSizeString(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Text('Clearable Data: ...');
+                  return const Text('Clearable Data: ...');
                 }
                 final usage = snapshot.data ?? '0 KB';
                 return Text(
@@ -366,7 +366,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 totalBytes += await file.length();
               }
               final prefsDir =
-                  Directory(appDocDir.path + '/../shared_preferences');
+                  Directory('${appDocDir.path}/../shared_preferences');
               if (await prefsDir.exists()) {
                 for (final file in prefsDir.listSync()) {
                   if (file is File) {
@@ -375,7 +375,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 }
               } else {
                 final androidPrefsDir =
-                    Directory(appDocDir.path + '/../shared_prefs');
+                    Directory('${appDocDir.path}/../shared_prefs');
                 if (await androidPrefsDir.exists()) {
                   for (final file in androidPrefsDir.listSync()) {
                     if (file is File) {
@@ -387,6 +387,7 @@ class _SettingsPageState extends State<SettingsPage> {
               await DependencyInjectionHive.saveClearableDataBaseline(
                   totalBytes);
               if (mounted) {
+                // ignore: use_build_context_synchronously
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Data cleared successfully'),

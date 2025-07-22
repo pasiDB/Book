@@ -6,7 +6,7 @@ import '../bloc/book/book_event.dart';
 import '../bloc/book/book_state.dart';
 import '../../domain/entities/book.dart';
 import '../widgets/modern_loading_indicator.dart';
-import 'dart:developer' as developer;
+//import 'dart:developer' as developer;
 
 class BookDetailPage extends StatefulWidget {
   final int bookId;
@@ -29,6 +29,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // ignore: deprecated_member_use
     return WillPopScope(
       onWillPop: () async {
         if (Navigator.of(context).canPop()) {
